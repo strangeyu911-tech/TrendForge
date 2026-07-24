@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FluxPress API Console — AI Native 内容生产系统</title>
+<style>
+:root{
+  --bg:#0b0f1a; --bg2:#111827; --card:#161b2c; --card2:#1c2238; --border:#272d44;
+  --t:#e8ecf5; --t2:#9aa3bd; --t3:#6b7390;
+  --indigo:#6366f1; --purple:#a855f7; --pink:#ec4899; --teal:#14b8a6; --green:#22c55e; --amber:#f59e0b; --red:#ef4444; --blue:#3b82f6;
+  --grad:linear-gradient(135deg,#6366f1 0%,#a855f7 50%,#ec4899 100%);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter','Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:var(--t);line-height:1.6;-webkit-font-smoothing:antialiased}
+code,pre,.mono{font-family:'JetBrains Mono','Consolas',monospace}
+a{color:var(--indigo);text-decoration:none}
+a:hover{text-decoration:underline}
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+/* nav */
+nav{position:sticky;top:0;z-index:100;background:rgba(11,15,26,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+nav .container{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-weight:800;font-size:18px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+nav .links{display:flex;gap:24px;font-size:14px}
+nav a{color:var(--t2)}
+nav a:hover{color:var(--t)}
+/* hero */
+.hero{padding:80px 0 60px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-50%;left:50%;transform:translateX(-50%);width:900px;height:900px;background:radial-gradient(circle,rgba(99,102,241,.15),transparent 60%);pointer-events:none}
+.hero h1{font-size:48px;font-weight:800;margin-bottom:16px;letter-spacing:-.02em}
+.hero h1 span{background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--t2);font-size:18px;max-width:640px;margin:0 auto 32px}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:32px}
+.badge{padding:6px 14px;border-radius:999px;font-size:13px;border:1px solid var(--border);background:var(--card);color:var(--t2)}
+.badge.live{border-color:var(--green);color:var(--green)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:800px;margin:0 auto}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+.stat .n{font-size:28px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat .l{color:var(--t3);font-size:13px;margin-top:4px}
+/* section */
+section{padding:64px 0;border-top:1px solid var(--border)}
+.sec-head{text-align:center;margin-bottom:48px}
+.sec-head h2{font-size:32px;font-weight:700;margin-bottom:8px}
+.sec-head p{color:var(--t2)}
+/* connector */
+.connector{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:32px}
+.connector .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.connector input{flex:1;min-width:280px;background:var(--bg2);border:1px solid var(--border);color:var(--t);padding:12px 16px;border-radius:10px;font-size:14px;font-family:inherit}
+.connector input:focus{outline:none;border-color:var(--indigo)}
+.btn{padding:12px 20px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:600;font-family:inherit;transition:.15s}
+.btn-primary{background:var(--grad);color:#fff}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost{background:var(--card2);color:var(--t);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--indigo)}
+.status{font-size:13px;color:var(--t3);margin-top:12px}
+.status.ok{color:var(--green)} .status.err{color:var(--red)}
+/* vendors */
+.vendors{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.vendor{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;transition:.15s}
+.vendor:hover{border-color:var(--indigo);transform:translateY(-2px)}
+.vendor.active{border-color:var(--indigo);box-shadow:0 0 0 1px var(--indigo)}
+.vendor .name{font-weight:700;font-size:15px}
+.vendor .kind{font-size:11px;color:var(--t3);margin:2px 0 8px}
+.vendor .model{font-size:12px;color:var(--t2);font-family:'JetBrains Mono',monospace}
+.vendor .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.dot.on{background:var(--green)} .dot.off{background:var(--t3)}
+/* endpoints */
+.ep-group{margin-bottom:32px}
+.ep-group h3{font-size:16px;color:var(--t2);margin-bottom:12px;padding-left:4px;border-left:3px solid var(--indigo);padding-left:12px}
+.ep{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.method{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;min-width:54px;text-align:center}
+.m-get{background:rgba(59,130,246,.15);color:var(--blue)}
+.m-post{background:rgba(34,197,94,.15);color:var(--green)}
+.m-put{background:rgba(245,158,11,.15);color:var(--amber)}
+.m-del{background:rgba(239,68,68,.15);color:var(--red)}
+.ep .path{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--t);flex:1}
+.ep .desc{color:var(--t3);font-size:12px}
+.ep .try{font-size:12px;padding:5px 10px}
+/* data explorer */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.tab{padding:10px 18px;cursor:pointer;color:var(--t2);font-size:14px;border-bottom:2px solid transparent;transition:.15s}
+.tab.active{color:var(--t);border-bottom-color:var(--indigo)}
+.tab:hover{color:var(--t)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.news-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px}
+.news-card .src{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.news-card .src .name{font-weight:600;font-size:14px}
+.news-card .src .tier{font-size:11px;padding:2px 8px;border-radius:999px}
+.tier1{background:rgba(34,197,94,.15);color:var(--green)}
+.tier2{background:rgba(245,158,11,.15);color:var(--amber)}
+.news-card h4{font-size:15px;margin-bottom:6px}
+.news-card p{color:var(--t2);font-size:13px}
+.news-card .meta{margin-top:8px;font-size:11px;color:var(--t3);display:flex;gap:12px;flex-wrap:wrap}
+.search-box{display:flex;gap:10px;margin-bottom:20px}
+.search-box input{flex:1;background:var(--bg2);border:1px solid var(--border);color:var(--t);padding:12px 16px;border-radius:10px;font-size:14px}
+.search-box input:focus{outline:none;border-color:var(--indigo)}
+.result{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px}
+.result .score{color:var(--amber);font-size:12px;font-family:'JetBrains Mono',monospace}
+.prompt-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:12px}
+.prompt-card .pid{font-family:'JetBrains Mono',monospace;color:var(--indigo);font-size:13px}
+.prompt-card pre{background:var(--bg2);padding:12px;border-radius:8px;font-size:12px;color:var(--t2);margin-top:8px;overflow-x:auto;white-space:pre-wrap}
+/* deploy */
+.deploy-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.deploy-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px}
+.deploy-card h4{font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.deploy-card .tag{font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(99,102,241,.15);color:var(--indigo)}
+.deploy-card p{color:var(--t2);font-size:13px;margin-bottom:10px}
+.deploy-card pre{background:var(--bg2);padding:12px;border-radius:8px;font-size:12px;color:var(--teal);overflow-x:auto}
+footer{padding:40px 0;text-align:center;color:var(--t3);font-size:13px;border-top:1px solid var(--border)}
+.reveal{opacity:0;transform:translateY(20px);transition:.6s}
+.reveal.show{opacity:1;transform:none}
+@media(max-width:768px){.stats{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:32px}.deploy-grid{grid-template-columns:1fr}.ep{flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="container">
+    <div class="logo">⚡ FluxPress</div>
+    <div class="links">
+      <a href="#vendors">厂商</a><a href="#api">API</a><a href="#data">数据</a><a href="#deploy">部署</a>
+      <a href="/" style="color:var(--t2)">← 系统门户</a>
+    </div>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="container">
+    <div class="badges">
+      <span class="badge live">● API 控制台</span>
+      <span class="badge">6 家 LLM 厂商</span>
+      <span class="badge">21 个 REST 接口</span>
+      <span class="badge">真实种子数据</span>
+    </div>
+    <h1>公网可访问的 <span>API 控制台</span></h1>
+    <p>这是 FluxPress 后端的交互式控制台。下方嵌入了真实的种子数据（8 篇新闻 / 16 个向量块 / 3 个 Prompt），你可以直接浏览、检索；填入已部署后端地址后，所有"试用"按钮将调用真实服务。</p>
+    <div class="stats">
+      <div class="stat"><div class="n">6</div><div class="l">LLM 厂商</div></div>
+      <div class="stat"><div class="n">21</div><div class="l">REST 接口</div></div>
+      <div class="stat"><div class="n">8</div><div class="l">新闻文档</div></div>
+      <div class="stat"><div class="n">16</div><div class="l">向量块</div></div>
+    </div>
+  </div>
+</div>
+
+<section id="connect">
+  <div class="container">
+    <div class="sec-head"><h2>🔗 连接真实后端</h2><p>填入你部署的后端地址（见下方部署指南），控制台将从"快照模式"切换为"实时模式"</p></div>
+    <div class="connector">
+      <div class="row">
+        <input id="apiUrl" placeholder="https://trendforge-api.onrender.com （留空 = 用内置快照数据）">
+        <button class="btn btn-primary" onclick="connectBackend()">连接</button>
+        <button class="btn btn-ghost" onclick="testHealth()">测试健康检查</button>
+        <button class="btn btn-ghost" onclick="disconnect()">断开</button>
+      </div>
+      <div class="status" id="connStatus">● 快照模式：使用内置真实种子数据（只读）</div>
+    </div>
+  </div>
+</section>
+
+<section id="vendors">
+  <div class="container">
+    <div class="sec-head"><h2>🤖 多 LLM 厂商支持</h2><p>一套代码统一抽象，OpenAI 兼容 + Anthropic 原生，可同时配置多家用于 A/B 实验</p></div>
+    <div class="vendors" id="vendorGrid"></div>
+  </div>
+</section>
+
+<section id="api">
+  <div class="container">
+    <div class="sec-head"><h2>📡 API 接口目录</h2><p>点击"试用"调用真实后端（需先连接）或查看示例响应</p></div>
+    <div id="endpointList"></div>
+  </div>
+</section>
+
+<section id="data">
+  <div class="container">
+    <div class="sec-head"><h2>🗄️ 真实数据浏览器</h2><p>来自种子知识库的真实数据，可在快照模式下直接检索</p></div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('news')">📰 新闻知识库 (8)</div>
+      <div class="tab" onclick="switchTab('search')">🔍 RAG 检索</div>
+      <div class="tab" onclick="switchTab('prompts')">📝 Prompt 模板 (3)</div>
+    </div>
+    <div class="tab-panel active" id="tab-news"></div>
+    <div class="tab-panel" id="tab-search">
+      <div class="search-box">
+        <input id="ragQuery" placeholder="输入检索词，如：GPT-6、美联储、多模态推理" value="GPT-6">
+        <button class="btn btn-primary" onclick="ragSearch()">检索</button>
+      </div>
+      <div id="ragResults"></div>
+    </div>
+    <div class="tab-panel" id="tab-prompts"></div>
+  </div>
+</section>
+
+<section id="deploy">
+  <div class="container">
+    <div class="sec-head"><h2>🚀 部署到公网</h2><p>CloudStudio 仅托管静态文件，后端需部署到能跑 Python 的平台。选一个方案：</p></div>
+    <div class="deploy-grid">
+      <div class="deploy-card">
+        <h4>方案 A · Render <span class="tag">推荐</span></h4>
+        <p>推送代码到 GitHub → Render 新建 Blueprint（自动识别 render.yaml）→ 填 LLM key → 2 分钟拿到公网地址。</p>
+        <pre>得到：https://trendforge-api.onrender.com/docs</pre>
+      </div>
+      <div class="deploy-card">
+        <h4>方案 B · Fly.io</h4>
+        <p>全球节点，香港/东京国内访问快，支持持久卷。</p>
+        <pre>fly launch && fly secrets set TF_OPENAI_API_KEY=sk-xxx && fly deploy</pre>
+      </div>
+      <div class="deploy-card">
+        <h4>方案 C · Docker 自托管</h4>
+        <p>任意云主机，数据持久化，完全可控。</p>
+        <pre>docker compose up -d   # → http://IP:8000/docs</pre>
+      </div>
+      <div class="deploy-card">
+        <h4>方案 D · ngrok 临时隧道 <span class="tag">秒开</span></h4>
+        <p>本地已跑服务时，60 秒拿到公网地址分享给别人（电脑需开机）。</p>
+        <pre>ngrok http 8000   # → https://xxxx.ngrok-free.app</pre>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:24px;color:var(--t2)">完整部署指南见 <code>src/trendforge/DEPLOYMENT.md</code>，含 Dockerfile / render.yaml / fly.toml / docker-compose.yml</p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">FluxPress — AI Native 全球内容供给平台 · 6 厂商 LLM · 21 REST API · FastAPI + SQLite + Chroma</div>
+</footer>
+
+<script>
+// ====== 内置真实种子数据快照 ======
+const SNAPSHOT = {"news":[{"doc_id":"doc_e99ec53ddbeeeb1b","source_name":"OpenAI Blog","title":"OpenAI 发布 GPT-6：多模态推理与 10 万亿参数","content":"OpenAI 于 2026 年 7 月 21 日正式发布 GPT-6。新模型参数量达到 10 万亿，较 GPT-5 提升约 5 倍。GPT-6 引入原生多模态推理能力，可同时处理文本、图像、音频和视频输入，并在推理任务上实现显著提升。OpenAI CEO 表示，GPT-6 在 MMLU、GSM8K 等基准测试中均创下单项新高。模型将于下周通过 API 向开发者开放。","url":"https://openai.com/blog/gpt6","published_at":"2026-07-21 14:23","language":"zh","category":"tech","credibility_tier":1,"entities":["OpenAI","GPT-6","多模态"]},{"doc_id":"doc_cc7064df7d5a6841","source_name":"Reuters","title":"OpenAI launches GPT-6 with 10 trillion parameters","content":"OpenAI launched GPT-6 on July 21, 2026, with 10 trillion parameters, a 5x increase over GPT-5. The new model features native multimodal reasoning and achieves state-of-the-art results on MMLU and GSM8K benchmarks. CEO announced the API will be available to developers next week.","url":"https://reuters.com/tech/openai-gpt6-launch","published_at":"2026-07-21 12:23","language":"en","category":"tech","credibility_tier":1,"entities":["OpenAI","GPT-6"]},{"doc_id":"doc_94fe16d3ce30de65","source_name":"36氪","title":"GPT-6 来了：参数翻 5 倍，OpenAI 再次拉开差距","content":"36氪 7 月 21 日消息，OpenAI 今日发布 GPT-6，参数量达 10 万亿，较 GPT-5 翻 5 倍。新模型在多模态推理、长文本理解上有显著提升。业内分析认为，GPT-6 的发布将进一步拉大 OpenAI 与竞争对手的差距。多家国内大模型厂商表示将加速追赶。","url":"https://36kr.com/p/gpt6-launch","published_at":"2026-07-21 10:23","language":"zh","category":"tech","credibility_tier":2,"entities":["OpenAI","GPT-6","36氪"]},{"doc_id":"doc_1b7e67f65ee72a39","source_name":"Federal Reserve","title":"美联储 7 月议息会议：维持利率不变","content":"美联储 7 月议息会议结束，决定维持联邦基金利率目标区间在 5.25%-5.50% 不变。声明指出通胀仍高于目标，但点阵图显示年内可能降息一次。主席在新闻发布会上表示，将依据数据决定后续政策路径。市场预期 9 月降息概率升至 70%。","url":"https://federalreserve.gov/monetarypolicy/2026-07.htm","published_at":"2026-07-21 08:23","language":"zh","category":"finance","credibility_tier":1,"entities":["美联储","利率","降息"]},{"doc_id":"doc_7baab3070e187595","source_name":"Bloomberg","title":"Fed Holds Rates Steady, Signals Possible Cut This Year","content":"The Federal Reserve kept its benchmark rate at 5.25%-5.50% at the July meeting. The dot plot indicates one possible cut this year. The Chair said future policy will depend on data. Markets priced in a 70% probability of a September cut. Global equities rose following the announcement.","url":"https://bloomberg.com/news/fed-july-2026","published_at":"2026-07-21 06:23","language":"en","category":"finance","credibility_tier":1,"entities":["Federal Reserve","interest rate"]},{"doc_id":"doc_05c7c10eeb062d42","source_name":"TechCrunch","title":"GPT-6 benchmark results: OpenAI claims new SOTA across reasoning tasks","content":"TechCrunch reports: OpenAI's GPT-6 sets new state-of-the-art on MMLU (92.1%), GSM8K (97.3%), and HumanEval (95.8%). The model shows significant improvement in multi-step reasoning and code generation. Compared to GPT-5, GPT-6 reduces hallucination rates.","url":"https://techcrunch.com/2026/07/21/gpt6-benchmarks","published_at":"2026-07-21 04:23","language":"en","category":"tech","credibility_tier":2,"entities":["OpenAI","GPT-6","MMLU","GSM8K"]},{"doc_id":"doc_1a2de937b01b1365","source_name":"财新","title":"美联储按兵不动：对 A 股与人民币的影响几何","content":"财新网 7 月 21 日报道，美联储维持利率不变，市场对 9 月降息预期升温。分析师认为，若美联储年内降息，将缓解人民币贬值压力，A 股外资流入或增加。机构建议关注受益于流动性宽松的成长板块。","url":"https://caixin.com/fed-impact-2026","published_at":"2026-07-21 02:23","language":"zh","category":"finance","credibility_tier":2,"entities":["美联储","A股","人民币"]},{"doc_id":"doc_b9c6118d24fe18a2","source_name":"The Verge","title":"GPT-6's multimodal reasoning could change how we interact with AI","content":"The Verge analysis: GPT-6's native multimodal reasoning allows it to process text, images, audio, and video simultaneously. This enables new use cases like real-time video analysis and cross-modal question answering.","url":"https://theverge.com/2026/7/21/gpt6-multimodal","published_at":"2026-07-21 00:23","language":"en","category":"tech","credibility_tier":2,"entities":["OpenAI","GPT-6","multimodal"]}],
+"prompts":[{"prompt_id":"planner_topic","version":"v1.0.0","agent":"planner","scene":"topic","status":"production","template_preview":"你是资深热点选题策划。基于以下热点信号，输出 JSON。\n\n策略：{{ strategy | tojson }}\n信号源：{{ signals | tojson }}\n\n要求：\n1. 去重（标题语义相似>0.85视为重复）\n2. 按热度打分排序\n3. 输出 topic_id/title/summary/category/suggested_angles"},{"prompt_id":"writer_deep_dive","version":"v1.0.0","agent":"writer","scene":"deep_dive","status":"production","template_preview":"你是资深{{ topic.category }}领域新闻编辑。\n\n# 任务\n基于以下证据，撰写一篇 {{ template_type }} 稿件。\n\n# 约束\n- 字数 {{ constraints.min_words }}~{{ constraints.max_words }}\n- 必须引用全部证据\n- 客观中立，禁止臆测"},{"prompt_id":"reviewer_check","version":"v1.0.0","agent":"reviewer","scene":"check","status":"production","template_preview":"你是严格的内容审核编辑。审核以下稿件。\n\n# 稿件\n{{ article | tojson }}\n\n# 证据\n{{ evidences | tojson }}\n\n# 审核要求\n1. 事实核查：逐条校验引用是否与证据一致\n2. 合规扫描：敏感词检测"}],
+"stats":{"documents":8,"chunks":16,"prompts":3}};
+
+const VENDORS=[
+{vendor:"openai",label:"OpenAI",kind:"openai",base_url:"api.openai.com/v1",model:"gpt-4o-mini",active:true},
+{vendor:"anthropic",label:"Anthropic Claude",kind:"anthropic",base_url:"api.anthropic.com",model:"claude-3-5-haiku",active:false},
+{vendor:"deepseek",label:"DeepSeek 深度求索",kind:"openai",base_url:"api.deepseek.com/v1",model:"deepseek-chat",active:false},
+{vendor:"kimi",label:"Kimi 月之暗面",kind:"openai",base_url:"api.moonshot.cn/v1",model:"moonshot-v1-8k",active:false},
+{vendor:"qwen",label:"Qwen 通义千问",kind:"openai",base_url:"dashscope.aliyuncs.com",model:"qwen-plus",active:false},
+{vendor:"glm",label:"GLM 智谱清言",kind:"openai",base_url:"open.bigmodel.cn",model:"glm-4-flash",active:false}
+];
+
+const ENDPOINTS=[
+{g:"健康与厂商",items:[
+{m:"GET",p:"/api/health",d:"健康检查 + 厂商配置状态",try:1},
+{m:"GET",p:"/api/llm/vendors",d:"列出 6 家 LLM 厂商及配置",try:1},
+{m:"GET",p:"/api/llm/test",d:"厂商连通性测试",try:1},
+{m:"POST",p:"/api/llm/test",d:"厂商连通性测试（带自定义 prompt）",try:0}]},
+{g:"内容生产",items:[
+{m:"POST",p:"/api/content/run-topic",d:"单话题端到端生产（需 LLM key）",try:0},
+{m:"POST",p:"/api/content/run-pipeline",d:"完整流水线：信号→选题→生产",try:0},
+{m:"GET",p:"/api/content/{content_id}",d:"查看生产的内容",try:0}]},
+{g:"任务追踪",items:[
+{m:"GET",p:"/api/tasks",d:"任务列表",try:1},
+{m:"GET",p:"/api/tasks/{task_id}/trace",d:"任务 Trace（含各 Agent span）",try:0}]},
+{g:"RAG 知识库",items:[
+{m:"POST",p:"/api/rag/ingest",d:"入库新闻",try:0},
+{m:"GET",p:"/api/rag/search",d:"语义检索知识库",try:1},
+{m:"GET",p:"/api/rag/stats",d:"向量库统计",try:1}]},
+{g:"Prompt 管理",items:[
+{m:"POST",p:"/api/prompts",d:"创建 Prompt 新版本",try:0},
+{m:"GET",p:"/api/prompts/{prompt_id}",d:"列出 Prompt 版本",try:0},
+{m:"POST",p:"/api/prompts/{id}/{ver}/promote",d:"晋升为生产版本",try:0}]},
+{g:"A/B 实验",items:[
+{m:"POST",p:"/api/experiments",d:"创建实验",try:0},
+{m:"GET",p:"/api/experiments/{id}/report",d:"实验报告（含显著性检验）",try:0}]},
+{g:"数据分析",items:[
+{m:"GET",p:"/api/analytics/funnel",d:"生产漏斗",try:1},
+{m:"GET",p:"/api/analytics/ctr-by-category",d:"分品类 CTR",try:1},
+{m:"GET",p:"/api/analytics/prompt-effect",d:"Prompt 效果",try:1},
+{m:"GET",p:"/api/analytics/bad-cases",d:"Bad Case 统计",try:1},
+{m:"GET",p:"/api/analytics/production",d:"生产统计",try:1},
+{m:"GET",p:"/api/analytics/cost",d:"成本统计",try:1}]}
+];
+
+let BACKEND=""; // 空=快照模式
+
+// ====== 渲染厂商 ======
+function renderVendors(){
+  const g=document.getElementById('vendorGrid');
+  g.innerHTML=VENDORS.map(v=>`
+    <div class="vendor ${v.active?'active':''}">
+      <div class="name">${v.label} ${v.active?'<span style="color:var(--indigo);font-size:11px">● 激活</span>':''}</div>
+      <div class="kind">${v.kind==='anthropic'?'原生 Messages API':'OpenAI 兼容接口'}</div>
+      <div class="model">${v.model}</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--t3)">${v.base_url}</div>
+    </div>`).join('');
+}
+
+// ====== 渲染接口 ======
+function renderEndpoints(){
+  const el=document.getElementById('endpointList');
+  el.innerHTML=ENDPOINTS.map(grp=>`
+    <div class="ep-group">
+      <h3>${grp.g}</h3>
+      ${grp.items.map(e=>`
+        <div class="ep">
+          <span class="method m-${e.m.toLowerCase()}">${e.m}</span>
+          <span class="path">${e.p}</span>
+          <span class="desc">${e.d}</span>
+          ${e.try?`<button class="btn btn-ghost try" onclick="tryEndpoint('${e.p}','${e.m}')">试用</button>`:''}
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+// ====== 渲染新闻 ======
+function renderNews(){
+  const el=document.getElementById('tab-news');
+  el.innerHTML=SNAPSHOT.news.map(n=>`
+    <div class="news-card">
+      <div class="src">
+        <span class="name">${n.source_name}</span>
+        <span class="tier tier${n.credibility_tier}">可信度 T${n.credibility_tier}</span>
+        <span style="font-size:11px;color:var(--t3)">${n.language==='zh'?'中文':'英文'} · ${n.category}</span>
+      </div>
+      <h4>${n.title}</h4>
+      <p>${n.content}</p>
+      <div class="meta">
+        <span>📅 ${n.published_at}</span>
+        <span>🔗 <a href="${n.url}" target="_blank">${n.url}</a></span>
+        <span>🏷️ ${n.entities.join(', ')}</span>
+      </div>
+    </div>`).join('');
+}
+
+// ====== 渲染 Prompt ======
+function renderPrompts(){
+  const el=document.getElementById('tab-prompts');
+  el.innerHTML=SNAPSHOT.prompts.map(p=>`
+    <div class="prompt-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <span class="pid">${p.prompt_id}</span>
+        <span style="font-size:11px;padding:2px 8px;border-radius:999px;background:rgba(34,197,94,.15);color:var(--green)">${p.version}</span>
+        <span style="font-size:11px;color:var(--t3)">${p.agent} · ${p.scene}</span>
+      </div>
+      <pre>${p.template_preview}</pre>
+    </div>`).join('');
+}
+
+// ====== Tab 切换 ======
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['news','search','prompts'].indexOf(name)===i));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ====== 连接后端 ======
+function connectBackend(){
+  const url=document.getElementById('apiUrl').value.trim().replace(/\/$/,'');
+  BACKEND=url;
+  const s=document.getElementById('connStatus');
+  if(url){s.className='status';s.textContent='● 正在连接 '+url+' ...';testHealth();}
+  else{s.className='status';s.textContent='● 快照模式：使用内置真实种子数据（只读）';}
+}
+function disconnect(){
+  BACKEND='';
+  document.getElementById('apiUrl').value='';
+  const s=document.getElementById('connStatus');
+  s.className='status';s.textContent='● 快照模式：使用内置真实种子数据（只读）';
+}
+async function testHealth(){
+  const s=document.getElementById('connStatus');
+  if(!BACKEND){s.className='status err';s.textContent='⚠ 快照模式无后端可测，请先填入后端地址';return;}
+  try{
+    const r=await fetch(BACKEND+'/api/health');
+    const d=await r.json();
+    s.className='status ok';
+    s.innerHTML=`● 已连接 ✓ status=${d.status} · 激活厂商=${d.active_vendor||'-'} · 已配置=${(d.vendors_configured||[]).join(',')||'无'}`;
+  }catch(e){s.className='status err';s.textContent='✗ 连接失败：'+e.message;}
+}
+
+// ====== 试用接口 ======
+async function tryEndpoint(path,method){
+  const out=document.getElementById('ragResults');
+  if(!BACKEND){alert('该接口需连接真实后端。请在上方"连接真实后端"填入地址。');return;}
+  let url=BACKEND+path;
+  if(path.includes('{')){const p=prompt('请填入路径参数（替换 {...}）：');if(!p)return;url=BACKEND+path.replace(/\{[^}]+\}/,p);}
+  if(path==='/api/rag/search'){const q=prompt('检索词：','GPT-6');if(!q)return;url+=`?q=${encodeURIComponent(q)}&top_k=5`;}
+  if(path==='/api/llm/test'){const v=prompt('厂商（留空=当前激活）：','');url+=v?`?vendor=${v}`:'';}
+  try{
+    const opt=method==='POST'?{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'}:{};
+    const r=await fetch(url,opt);
+    const d=await r.json();
+    const el=document.getElementById('ragResults');
+    el.innerHTML=`<div class="result"><div class="score">${method} ${path} → HTTP ${r.status}</div><pre>${JSON.stringify(d,null,2).slice(0,1500)}</pre></div>`+el.innerHTML;
+    switchTab('search');
+  }catch(e){alert('请求失败：'+e.message);}
+}
+
+// ====== RAG 检索（快照模式：客户端关键词匹配；实时模式：调真实接口）======
+async function ragSearch(){
+  const q=document.getElementById('ragQuery').value.trim();
+  if(!q)return;
+  const el=document.getElementById('ragResults');
+  if(BACKEND){
+    try{
+      const r=await fetch(`${BACKEND}/api/rag/search?q=${encodeURIComponent(q)}&top_k=5`);
+      const d=await r.json();
+      el.innerHTML=d.results.map((r,i)=>`<div class="result"><div class="score">#${i+1} score=${r.score} · ${r.source_name}</div><div style="margin:6px 0;font-size:13px">${r.content}</div><div style="font-size:11px;color:var(--t3)">${r.published_at}</div></div>`).join('')||'<p style="color:var(--t3)">无结果</p>';
+    }catch(e){el.innerHTML=`<div class="result" style="color:var(--red)">请求失败：${e.message}</div>`;}
+    return;
+  }
+  // 快照模式：简单关键词评分
+  const terms=q.toLowerCase().split(/\s+/);
+  const scored=SNAPSHOT.news.map(n=>{
+    const text=(n.title+' '+n.content+' '+n.entities.join(' ')).toLowerCase();
+    let s=0;terms.forEach(t=>{const m=text.match(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'));if(m)s+=m.length*2;});
+    if(n.title.toLowerCase().includes(q.toLowerCase()))s+=5;
+    return{n,s};
+  }).filter(x=>x.s>0).sort((a,b)=>b.s-a.s).slice(0,5);
+  el.innerHTML=scored.length?scored.map((x,i)=>`<div class="result"><div class="score">#${i+1} 相关度 ${x.s} · ${x.n.source_name} · T${x.n.credibility_tier}</div><div style="font-weight:600;margin:6px 0;font-size:14px">${x.n.title}</div><div style="font-size:13px;color:var(--t2)">${x.n.content.slice(0,160)}...</div><div style="font-size:11px;color:var(--t3);margin-top:4px">📅 ${x.n.published_at} · 🏷️ ${x.n.entities.join(', ')}</div></div>`).join(''):'<p style="color:var(--t3)">无匹配结果（快照模式仅 8 篇种子新闻）</p>';
+}
+
+// ====== reveal 动画 ======
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('show');}),{threshold:.1});
+document.querySelectorAll('section').forEach(s=>{s.classList.add('reveal');obs.observe(s);});
+
+// 初始化
+renderVendors();renderEndpoints();renderNews();renderPrompts();
+</script>
+</body>
+</html>

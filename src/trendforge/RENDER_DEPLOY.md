@@ -5,7 +5,7 @@
 
 ## 前置准备
 
-1. 代码推到 GitHub 仓库（含 `src/trendforge/render.yaml`）
+1. 把整个仓库推到 GitHub（仓库根目录需有 `render.yaml`，现已就位）
 2. 注册 [Render](https://render.com)（免费账号即可，可用 GitHub 登录）
 3. 准备好智谱 GLM API Key（`id.secret` 格式）
 
@@ -14,7 +14,7 @@
 ### 1. 创建 Blueprint
 - Render 控制台 → **New** → **Blueprint**
 - 选择你的 GitHub 仓库
-- Render 会自动读取 `src/trendforge/render.yaml`，识别出 `fluxpress-api` 服务
+- Render 会自动读取**仓库根目录**的 `render.yaml`，识别出 `fluxpress-api` 服务
 
 ### 2. 填入 LLM Key
 - 在环境变量中找到 `TF_GLM_API_KEY`，填入你的智谱 key

@@ -10,9 +10,9 @@ TrendForge 是一个 **FastAPI + SQLite + Chroma** 的 Python 后端，`python m
 
 ## 方案 A：Render（推荐，5 分钟，免费层）
 
-1. 把 `src/trendforge/` 整个目录推到 GitHub 仓库
+1. 把整个仓库推到 GitHub（仓库根目录需有 `render.yaml`）
 2. 登录 https://render.com → New → **Blueprint**
-3. 选你的仓库，Render 会自动识别 `render.yaml`
+3. 选你的仓库，Render 会自动识别仓库根目录的 `render.yaml`
 4. 在环境变量里填至少一家 LLM key（如 `TF_OPENAI_API_KEY=sk-xxx`）
 5. 点 Create → 等 2-3 分钟构建完成 → 拿到 `https://trendforge-api.onrender.com`
 6. 访问 `https://trendforge-api.onrender.com/docs` 即 Swagger 文档
