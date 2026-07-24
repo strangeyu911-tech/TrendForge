@@ -9,7 +9,7 @@ services:
     # rootDir 是 Docker 构建上下文目录，也是 dockerfilePath 的基准目录。
     # Dockerfile / requirements.txt / api/ / db.py / data/ 全部在 src/trendforge/ 下，
     # 所以构建上下文必须是 src/trendforge；dockerfilePath 相对 rootDir，./Dockerfile => src/trendforge/Dockerfile。
-    rootDir: src/trendforge
+    rootDir: src
     dockerfilePath: ./Dockerfile
     plan: free
     healthCheckPath: /api/health
