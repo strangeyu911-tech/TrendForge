@@ -1,0 +1,31 @@
+# Fly.io 部署配置 — fly launch / fly deploy
+app = "trendforge-api"
+primary_region = "hkg"   # 香港，国内访问较快；可改 nrt(东京)/sin(新加坡)
+
+[build]
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true      # 免费层：无请求时自动停机
+  auto_start_machines = true     # 有请求时自动唤醒
+  min_machines_running = 0
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 100
+    soft_limit = 50
+
+[[vm]]
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+# 持久化卷（保留 SQLite + Chroma）
+[[mounts]]
+  source = "trendforge_data"
+  destination = "/app/data"
+  initial_size = "1gb"
+
+# 环境变量在 fly 控制台或 fly secrets 设置：
+#   fly secrets set TF_OPENAI_API_KEY=sk-xxx
+#   fly secrets set TF_LLM_VENDOR=openai

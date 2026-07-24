@@ -1,0 +1,139 @@
+{
+  "news": [
+    {
+      "doc_id": "doc_e99ec53ddbeeeb1b",
+      "source_name": "OpenAI Blog",
+      "title": "OpenAI 发布 GPT-6：多模态推理与 10 万亿参数",
+      "content": "OpenAI 于 2026 年 7 月 21 日正式发布 GPT-6。新模型参数量达到 10 万亿，较 GPT-5 提升约 5 倍。GPT-6 引入原生多模态推理能力，可同时处理文本、图像、音频和视频输入，并在推理任务上实现显著提升。OpenAI CEO 表示，GPT-6 在 MMLU、GSM8K 等基准测试中均创下单项新高。模型将于下周通过 API 向开发者开放。",
+      "url": "https://openai.com/blog/gpt6",
+      "published_at": "2026-07-21 14:23:55.841873",
+      "language": "zh",
+      "category": "tech",
+      "credibility_tier": 1,
+      "entities": "[\"OpenAI\", \"GPT-6\", \"\\u591a\\u6a21\\u6001\"]",
+      "status": "indexed"
+    },
+    {
+      "doc_id": "doc_cc7064df7d5a6841",
+      "source_name": "Reuters",
+      "title": "OpenAI launches GPT-6 with 10 trillion parameters",
+      "content": "OpenAI launched GPT-6 on July 21, 2026, with 10 trillion parameters, a 5x increase over GPT-5. The new model features native multimodal reasoning and achieves state-of-the-art results on MMLU and GSM8K benchmarks. CEO announced the API will be available to developers next week. The model is expected",
+      "url": "https://reuters.com/tech/openai-gpt6-launch",
+      "published_at": "2026-07-21 12:23:55.841873",
+      "language": "en",
+      "category": "tech",
+      "credibility_tier": 1,
+      "entities": "[\"OpenAI\", \"GPT-6\"]",
+      "status": "indexed"
+    },
+    {
+      "doc_id": "doc_94fe16d3ce30de65",
+      "source_name": "36氪",
+      "title": "GPT-6 来了：参数翻 5 倍，OpenAI 再次拉开差距",
+      "content": "36氪 7 月 21 日消息，OpenAI 今日发布 GPT-6，参数量达 10 万亿，较 GPT-5 翻 5 倍。新模型在多模态推理、长文本理解上有显著提升。业内分析认为，GPT-6 的发布将进一步拉大 OpenAI 与竞争对手的差距。多家国内大模型厂商表示将加速追赶。",
+      "url": "https://36kr.com/p/gpt6-launch",
+      "published_at": "2026-07-21 10:23:55.841873",
+      "language": "zh",
+      "category": "tech",
+      "credibility_tier": 2,
+      "entities": "[\"OpenAI\", \"GPT-6\", \"36\\u6c2a\"]",
+      "status": "indexed"
+    },
+    {
+      "doc_id": "doc_1b7e67f65ee72a39",
+      "source_name": "Federal Reserve",
+      "title": "美联储 7 月议息会议：维持利率不变",
+      "content": "美联储 7 月议息会议结束，决定维持联邦基金利率目标区间在 5.25%-5.50% 不变。声明指出通胀仍高于目标，但点阵图显示年内可能降息一次。主席在新闻发布会上表示，将依据数据决定后续政策路径。市场预期 9 月降息概率升至 70%。",
+      "url": "https://federalreserve.gov/monetarypolicy/2026-07.htm",
+      "published_at": "2026-07-21 08:23:55.841873",
+      "language": "zh",
+      "category": "finance",
+      "credibility_tier": 1,
+      "entities": "[\"\\u7f8e\\u8054\\u50a8\", \"\\u5229\\u7387\", \"\\u964d\\u606f\"]",
+      "status": "indexed"
+    },
+    {
+      "doc_id": "doc_7baab3070e187595",
+      "source_name": "Bloomberg",
+      "title": "Fed Holds Rates Steady, Signals Possible Cut This Year",
+      "content": "The Federal Reserve kept its benchmark rate at 5.25%-5.50% at the July meeting. The dot plot indicates one possible cut this year. The Chair said future policy will depend on data. Markets priced in a 70% probability of a September cut. Global equities rose following the announcement.",
+      "url": "https://bloomberg.com/news/fed-july-2026",
+      "published_at": "2026-07-21 06:23:55.841873",
+      "language": "en",
+      "category": "finance",
+      "credibility_tier": 1,
+      "entities": "[\"Federal Reserve\", \"interest rate\"]",
+      "status": "indexed"
+    },
+    {
+      "doc_id": "doc_05c7c10eeb062d42",
+      "source_name": "TechCrunch",
+      "title": "GPT-6 benchmark results: OpenAI claims new SOTA across reasoning tasks",
+      "content": "TechCrunch reports: OpenAI's GPT-6 sets new state-of-the-art on MMLU (92.1%), GSM8K (97.3%), and HumanEval (95.8%). The model shows significant improvement in multi-step reasoning and code generation. Independent researchers are verifying the claims. Compared to GPT-5, GPT-6 reduces hallucination ra",
+      "url": "https://techcrunch.com/2026/07/21/gpt6-benchmarks",
+      "published_at": "2026-07-21 04:23:55.841873",
+      "language": "en",
+      "category": "tech",
+      "credibility_tier": 2,
+      "entities": "[\"OpenAI\", \"GPT-6\", \"MMLU\", \"GSM8K\"]",
+      "status": "indexed"
+    },
+    {
+      "doc_id": "doc_1a2de937b01b1365",
+      "source_name": "财新",
+      "title": "美联储按兵不动：对 A 股与人民币的影响几何",
+      "content": "财新网 7 月 21 日报道，美联储维持利率不变，市场对 9 月降息预期升温。分析师认为，若美联储年内降息，将缓解人民币贬值压力，A 股外资流入或增加。但短期仍需关注国内经济数据。机构建议关注受益于流动性宽松的成长板块。",
+      "url": "https://caixin.com/fed-impact-2026",
+      "published_at": "2026-07-21 02:23:55.841873",
+      "language": "zh",
+      "category": "finance",
+      "credibility_tier": 2,
+      "entities": "[\"\\u7f8e\\u8054\\u50a8\", \"A\\u80a1\", \"\\u4eba\\u6c11\\u5e01\"]",
+      "status": "indexed"
+    },
+    {
+      "doc_id": "doc_b9c6118d24fe18a2",
+      "source_name": "The Verge",
+      "title": "GPT-6's multimodal reasoning could change how we interact with AI",
+      "content": "The Verge analysis: GPT-6's native multimodal reasoning allows it to process text, images, audio, and video simultaneously. This enables new use cases like real-time video analysis and cross-modal question answering. OpenAI demonstrated GPT-6 analyzing a cooking video and answering questions about i",
+      "url": "https://theverge.com/2026/7/21/gpt6-multimodal",
+      "published_at": "2026-07-21 00:23:55.841873",
+      "language": "en",
+      "category": "tech",
+      "credibility_tier": 2,
+      "entities": "[\"OpenAI\", \"GPT-6\", \"multimodal\", \"ChatGPT\"]",
+      "status": "indexed"
+    }
+  ],
+  "prompts": [
+    {
+      "prompt_id": "planner_topic",
+      "version": "v1.0.0",
+      "agent": "planner",
+      "scene": "topic",
+      "status": "production",
+      "template_preview": "你是资深热点选题策划。基于以下热点信号，输出 JSON。\n\n策略：{{ strategy | tojson }}\n信号源：{{ signals | tojson }}\n\n要求：\n1. 去重（标题语义相似>0.85视为重复）\n2. 按热度打分"
+    },
+    {
+      "prompt_id": "writer_deep_dive",
+      "version": "v1.0.0",
+      "agent": "writer",
+      "scene": "deep_dive",
+      "status": "production",
+      "template_preview": "你是资深{{ topic.category }}领域新闻编辑。\n\n# 任务\n基于以下证据，撰写一篇 {{ template_type }} 稿件。\n\n# 约束\n- 字数 {{ constraints.min_words }}~{{ cons"
+    },
+    {
+      "prompt_id": "reviewer_check",
+      "version": "v1.0.0",
+      "agent": "reviewer",
+      "scene": "check",
+      "status": "production",
+      "template_preview": "你是严格的内容审核编辑。审核以下稿件。\n\n# 稿件\n{{ article | tojson }}\n\n# 证据\n{{ evidences | tojson }}\n\n# 审核要求\n1. 事实核查：逐条校验引用是否与证据一致\n2. 合规扫描：敏感"
+    }
+  ],
+  "stats": {
+    "documents": 8,
+    "chunks": 16,
+    "prompts": 3
+  }
+}

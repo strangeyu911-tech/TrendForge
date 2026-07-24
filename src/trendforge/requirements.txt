@@ -1,0 +1,30 @@
+# TrendForge 生产级实现依赖
+# Web 框架
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+# 数据库
+sqlalchemy[asyncio]==2.0.36
+aiosqlite==0.20.0
+# 向量库（嵌入式，无需独立服务）
+chromadb==0.5.23
+# LLM（OpenAI 兼容，可接 GPT/通义/Moonshot/DeepSeek）
+openai==1.59.7
+# Prompt 模板
+jinja2==3.1.4
+# 数据校验
+pydantic==2.10.4
+pydantic-settings==2.7.0
+# 异步 HTTP
+httpx==0.28.1
+# 后台任务调度
+apscheduler==3.10.4
+# 工具
+python-dateutil==2.9.0
+# ===== News Collector（知识库采集）=====
+feedparser==6.0.11        # RSS/Atom 解析
+beautifulsoup4==4.12.3    # HTML 结构化解析（智能 Chunk）
+lxml==5.3.0               # bs4 解析后端
+trafilatura==1.12.2       # 全文提取（RSS 只有摘要时抓全文）
+# 测试
+pytest==8.3.4
+pytest-asyncio==0.25.0

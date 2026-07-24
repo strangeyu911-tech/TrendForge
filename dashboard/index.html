@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrendForge 数据看板 | AI Native 热点内容生产系统</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --text:#1f2937; --sub:#6b7280;
+    --border:#e5e7eb; --red:#e74c3c; --green:#27ae60; --blue:#3498db;
+    --orange:#f39c12; --purple:#9b59b6; --teal:#16a085;
+    --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);padding:24px}
+  .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+  .header h1{font-size:22px;font-weight:700}
+  .header .sub{color:var(--sub);font-size:13px;margin-top:4px}
+  .badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:12px;background:#eaf4ff;color:#1a73e8;margin-left:8px}
+  .tabs{display:flex;gap:4px;background:var(--card);padding:6px;border-radius:10px;box-shadow:var(--shadow);margin-bottom:20px;flex-wrap:wrap}
+  .tab{padding:8px 18px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--sub);transition:all .2s;font-weight:500}
+  .tab.active{background:#1a73e8;color:#fff}
+  .tab:hover:not(.active){background:#f0f4ff}
+  .grid{display:grid;gap:16px}
+  .kpi-row{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .charts-row{grid-template-columns:repeat(auto-fit,minmax(440px,1fr))}
+  .card{background:var(--card);border-radius:12px;padding:20px;box-shadow:var(--shadow);border:1px solid var(--border)}
+  .card h3{font-size:15px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+  .card .desc{font-size:12px;color:var(--sub);margin-bottom:16px}
+  .kpi{display:flex;flex-direction:column;gap:6px}
+  .kpi .label{font-size:13px;color:var(--sub)}
+  .kpi .value{font-size:30px;font-weight:700;line-height:1.1}
+  .kpi .delta{font-size:12px;display:inline-flex;align-items:center;gap:4px}
+  .delta.up{color:var(--red)}   /* 涨=红，A股惯例 */
+  .delta.down{color:var(--green)}
+  .chart-wrap{position:relative;height:240px}
+  .chart-wrap.tall{height:300px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--sub);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  tr:hover{background:#fafbfc}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600}
+  .pill.pass{background:#e6f9ee;color:#1e8449}
+  .pill.fail{background:#fdecea;color:#c0392b}
+  .pill.warn{background:#fef5e7;color:#b9770e}
+  .panel{display:none}
+  .panel.active{display:block;animation:fade .3s}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .funnel{display:flex;flex-direction:column;gap:8px}
+  .funnel-row{display:flex;align-items:center;gap:12px}
+  .funnel-label{width:90px;font-size:13px;color:var(--sub)}
+  .funnel-bar{flex:1;height:32px;border-radius:6px;display:flex;align-items:center;padding:0 12px;color:#fff;font-size:12px;font-weight:600;min-width:60px}
+  .funnel-val{width:120px;text-align:right;font-size:13px;font-weight:600}
+  footer{margin-top:32px;padding-top:20px;border-top:1px solid var(--border);color:var(--sub);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>TrendForge 数据看板 <span class="badge">Demo</span></h1>
+    <div class="sub">AI Native 全球热点内容生产系统 · 数据更新 2026-07-21 19:08 · 7 日窗口</div>
+  </div>
+  <div class="sub">时区 GMT+8 · 数据基于 demo/analytics 模块模拟</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-tab="overview">经营总览</div>
+  <div class="tab" data-tab="production">生产监控</div>
+  <div class="tab" data-tab="distribution">分发效果</div>
+  <div class="tab" data-tab="prompt">Prompt 实验</div>
+  <div class="tab" data-tab="badcase">Bad Case</div>
+  <div class="tab" data-tab="cost">成本质量</div>
+</div>
+
+<!-- ===== 经营总览 ===== -->
+<div class="panel active" id="overview">
+  <div class="grid kpi-row" style="margin-bottom:16px">
+    <div class="card kpi"><div class="label">AI 内容总阅读时长</div><div class="value">128,540 <span style="font-size:14px;color:var(--sub)">小时</span></div><div class="delta up">▲ 18.4% WoW</div></div>
+    <div class="card kpi"><div class="label">人均阅读深度</div><div class="value">3.42 <span style="font-size:14px;color:var(--sub)">分钟</span></div><div class="delta up">▲ 6.1%</div></div>
+    <div class="card kpi"><div class="label">AI 内容占比</div><div class="value">73.5%</div><div class="delta up">▲ 9.2pp</div></div>
+    <div class="card kpi"><div class="label">单条内容成本</div><div class="value">¥0.31</div><div class="delta down">▼ 22.5%</div></div>
+  </div>
+  <div class="grid charts-row">
+    <div class="card"><h3>北極星：AI 内容总阅读时长趋势 <span style="font-size:12px;color:var(--sub)">7 日</span></h3><div class="desc">按日聚合，单位：小时</div><div class="chart-wrap"><canvas id="nsChart"></canvas></div></div>
+    <div class="card"><h3>内容生产漏斗 <span style="font-size:12px;color:var(--sub)">今日</span></h3><div class="desc">选题 → 发布 → 曝光 → 点击 → 完读</div>
+      <div class="funnel" style="margin-top:8px">
+        <div class="funnel-row"><div class="funnel-label">选题</div><div class="funnel-bar" style="background:#3498db;width:100%">182</div><div class="funnel-val">182</div></div>
+        <div class="funnel-row"><div class="funnel-label">生成</div><div class="funnel-bar" style="background:#2980b9;width:86%">156</div><div class="funnel-val">156</div></div>
+        <div class="funnel-row"><div class="funnel-label">审核通过</div><div class="funnel-bar" style="background:#16a085;width:69%">126</div><div class="funnel-val">126</div></div>
+        <div class="funnel-row"><div class="funnel-label">发布</div><div class="funnel-bar" style="background:#27ae60;width:65%">118</div><div class="funnel-val">118</div></div>
+        <div class="funnel-row"><div class="funnel-label">曝光</div><div class="funnel-bar" style="background:#f39c12;width:58%">1.2M</div><div class="funnel-val">1,205,000</div></div>
+        <div class="funnel-row"><div class="funnel-label">点击</div><div class="funnel-bar" style="background:#e67e22;width:24%">48K</div><div class="funnel-val">48,200</div></div>
+        <div class="funnel-row"><div class="funnel-label">完读</div><div class="funnel-bar" style="background:#e74c3c;width:11%">13.2K</div><div class="funnel-val">13,210</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 生产监控 ===== -->
+<div class="panel" id="production">
+  <div class="grid kpi-row" style="margin-bottom:16px">
+    <div class="card kpi"><div class="label">日生产量</div><div class="value">118</div><div class="delta up">▲ 12 篇</div></div>
+    <div class="card kpi"><div class="label">端到端 P50 时延</div><div class="value">4.2 <span style="font-size:14px;color:var(--sub)">分钟</span></div><div class="delta down">▼ 0.8 min</div></div>
+    <div class="card kpi"><div class="label">审核通过率</div><div class="value">80.8%</div><div class="delta up">▲ 3.2pp</div></div>
+    <div class="card kpi"><div class="label">人工介入率</div><div class="value">6.7%</div><div class="delta down">▼ 1.5pp</div></div>
+  </div>
+  <div class="grid charts-row">
+    <div class="card"><h3>生产时延 P50/P95 趋势</h3><div class="desc">单位：分钟，目标 SLA ≤ 8 min</div><div class="chart-wrap"><canvas id="latencyChart"></canvas></div></div>
+    <div class="card"><h3>各 Agent 成功率与降级率</h3><div class="desc">近 7 日</div><div class="chart-wrap tall"><canvas id="agentChart"></canvas></div></div>
+  </div>
+  <div class="grid charts-row" style="margin-top:16px">
+    <div class="card"><h3>回退与重试分布</h3><div class="desc">按 Agent 维度</div>
+      <table><thead><tr><th>Agent</th><th>调用数</th><th>成功</th><th>降级</th><th>失败</th><th>重试率</th></tr></thead>
+      <tbody>
+        <tr><td>Planner</td><td>182</td><td>179</td><td>3</td><td>0</td><td>1.6%</td></tr>
+        <tr><td>Research</td><td>179</td><td>165</td><td>12</td><td>2</td><td>6.7%</td></tr>
+        <tr><td>Writer</td><td>176</td><td>168</td><td>6</td><td>2</td><td>4.5%</td></tr>
+        <tr><td>Reviewer</td><td>174</td><td>174</td><td>0</td><td>0</td><td>0%</td></tr>
+        <tr><td>Publisher</td><td>126</td><td>124</td><td>2</td><td>0</td><td>1.6%</td></tr>
+      </tbody></table>
+    </div>
+    <div class="card"><h3>各品类生产量与通过率</h3><div class="chart-wrap"><canvas id="categoryChart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== 分发效果 ===== -->
+<div class="panel" id="distribution">
+  <div class="grid kpi-row" style="margin-bottom:16px">
+    <div class="card kpi"><div class="label">整体 CTR</div><div class="value">4.01%</div><div class="delta up">▲ 0.32pp</div></div>
+    <div class="card kpi"><div class="label">阅读率</div><div class="value">65.7%</div><div class="delta up">▲ 1.2pp</div></div>
+    <div class="card kpi"><div class="label">完读率</div><div class="value">41.9%</div><div class="delta up">▲ 0.8pp</div></div>
+    <div class="card kpi"><div class="label">互动率</div><div class="value">8.3%</div><div class="delta up">▲ 0.5pp</div></div>
+  </div>
+  <div class="grid charts-row">
+    <div class="card"><h3>CTR 日趋势（按品类）</h3><div class="desc">7 日，涨红跌绿（A股惯例）</div><div class="chart-wrap tall"><canvas id="ctrTrendChart"></canvas></div></div>
+    <div class="card"><h3>阅读率 vs 完读率（按品类）</h3><div class="desc">气泡大小=曝光量</div><div class="chart-wrap tall"><canvas id="readChart"></canvas></div></div>
+  </div>
+  <div class="grid charts-row" style="margin-top:16px">
+    <div class="card"><h3>完读率 vs 字数区间</h3><div class="desc">找最佳字数区间</div><div class="chart-wrap"><canvas id="wordChart"></canvas></div></div>
+    <div class="card"><h3>渠道分发效果</h3><div class="chart-wrap"><canvas id="channelChart"></canvas></div></div>
+  </div>
+</div>
+
+<!-- ===== Prompt 实验 ===== -->
+<div class="panel" id="prompt">
+  <div class="grid kpi-row" style="margin-bottom:16px">
+    <div class="card kpi"><div class="label">运行中实验</div><div class="value">3</div><div class="delta up">本周新建 2</div></div>
+    <div class="card kpi"><div class="label">已结实验</div><div class="value">11</div><div class="delta up">胜出 7</div></div>
+    <div class="card kpi"><div class="label">Prompt 版本总数</div><div class="value">28</div><div class="delta up">▲ 4 本月</div></div>
+    <div class="card kpi"><div class="label">平均迭代周期</div><div class="value">2.8 <span style="font-size:14px;color:var(--sub)">天</span></div><div class="delta down">▼ 0.6 天</div></div>
+  </div>
+  <div class="grid charts-row">
+    <div class="card"><h3>Prompt 版本五维雷达（Writer deep_dive）</h3><div class="desc">v1.3.0 vs v2.0.1</div><div class="chart-wrap tall"><canvas id="radarChart"></canvas></div></div>
+    <div class="card"><h3>A/B 实验：v1.3.0 vs v2.0.1（CTR）</h3><div class="desc">含误差线，★=显著</div><div class="chart-wrap tall"><canvas id="abChart"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>实验列表</h3>
+    <table><thead><tr><th>实验ID</th><th>对象</th><th>对照组</th><th>实验组</th><th>核心指标</th><th>提升</th><th>p-value</th><th>结论</th></tr></thead>
+      <tbody>
+        <tr><td>exp_writer_001</td><td>Writer Prompt</td><td>v1.3.0</td><td>v2.0.1</td><td>CTR</td><td style="color:var(--red)">+15.8%</td><td>0.012</td><td><span class="pill pass">treatment 胜出</span></td></tr>
+        <tr><td>exp_rag_002</td><td>RAG 切分</td><td>段落</td><td>滑窗256</td><td>引用率</td><td style="color:var(--red)">+8.3%</td><td>0.034</td><td><span class="pill pass">treatment 胜出</span></td></tr>
+        <tr><td>exp_review_003</td><td>Reviewer 严格度</td><td>lenient</td><td>strict</td><td>Bad Case 率</td><td style="color:var(--red)">-34.1%</td><td>0.008</td><td><span class="pill pass">treatment 胜出</span></td></tr>
+        <tr><td>exp_model_004</td><td>Writer 模型</td><td>gpt-4o-mini</td><td>claude-haiku</td><td>质量分</td><td>+1.2%</td><td>0.42</td><td><span class="pill warn">无显著差异</span></td></tr>
+        <tr><td>exp_title_005</td><td>标题风格</td><td>信息型</td><td>悬念型</td><td>CTR</td><td style="color:var(--green)">-6.7%</td><td>0.021</td><td><span class="pill fail">control 胜出</span></td></tr>
+      </tbody></table>
+  </div>
+</div>
+
+<!-- ===== Bad Case ===== -->
+<div class="panel" id="badcase">
+  <div class="grid kpi-row" style="margin-bottom:16px">
+    <div class="card kpi"><div class="label">Bad Case 率（发布后）</div><div class="value">3.2%</div><div class="delta down">▼ 1.8pp</div></div>
+    <div class="card kpi"><div class="label">严重 Bad Case 率</div><div class="value">0.4%</div><div class="delta down">▼ 0.3pp</div></div>
+    <div class="card kpi"><div class="label">平均修复时长</div><div class="value">1.8 <span style="font-size:14px;color:var(--sub)">天</span></div><div class="delta down">▼ 0.9 天</div></div>
+    <div class="card kpi"><div class="label">同类复发率</div><div class="value">2.1%</div><div class="delta down">▼ 1.5pp</div></div>
+  </div>
+  <div class="grid charts-row">
+    <div class="card"><h3>Bad Case 分类帕累托</h3><div class="desc">按一级分类，柱=数量 线=累计占比</div><div class="chart-wrap tall"><canvas id="paretoChart"></canvas></div></div>
+    <div class="card"><h3>Bad Case 日趋势</h3><div class="desc">严重 vs 一般</div><div class="chart-wrap tall"><canvas id="bcTrendChart"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>典型 Bad Case（最近）</h3>
+    <table><thead><tr><th>ID</th><th>分类</th><th>严重度</th><th>描述</th><th>根因</th><th>修复动作</th><th>状态</th></tr></thead>
+      <tbody>
+        <tr><td>bc_001</td><td><span class="pill warn">H02 幻觉</span></td><td>严重</td><td>编造 GDP 增速数据 5.8%</td><td>Prompt 未强制数字引用</td><td>v2.0.1 增加约束</td><td><span class="pill pass">已解决</span></td></tr>
+        <tr><td>bc_002</td><td><span class="pill warn">C01 引用</span></td><td>中</td><td>A公司营收引用B公司财报</td><td>未校验引用相关性</td><td>Reviewer 增加相关性校验</td><td><span class="pill pass">已解决</span></td></tr>
+        <tr><td>bc_003</td><td><span class="pill warn">U01 标题党</span></td><td>轻</td><td>标题"震惊！"与正文不符</td><td>模板鼓励吸睛标题</td><td>标题词表黑名单</td><td><span class="pill pass">已解决</span></tr>
+        <tr><td>bc_004</td><td><span class="pill warn">G02 合规</span></td><td>严重</td><td>国际稿件地缘表述不当</td><td>选题未过滤</td><td>Planner 增加过滤+强制人工</td><td><span class="pill warn">修复中</span></td></tr>
+        <tr><td>bc_005</td><td><span class="pill warn">D02 低完读</span></td><td>中</td><td>完读率 9%（品类P10=25%）</td><td>开头铺垫过长</td><td>v2.0.1 开头强事实</td><td><span class="pill pass">已解决</span></td></tr>
+      </tbody></table>
+  </div>
+</div>
+
+<!-- ===== 成本质量 ===== -->
+<div class="panel" id="cost">
+  <div class="grid kpi-row" style="margin-bottom:16px">
+    <div class="card kpi"><div class="label">日总成本</div><div class="value">¥36.6</div><div class="delta down">▼ ¥8.2</div></div>
+    <div class="card kpi"><div class="label">单条成本</div><div class="value">¥0.31</div><div class="delta down">▼ ¥0.09</div></div>
+    <div class="card kpi"><div class="label">CPM</div><div class="value">¥0.03</div><div class="delta down">▼ ¥0.01</div></div>
+    <div class="card kpi"><div class="label">事实一致率</div><div class="value">98.1%</div><div class="delta up">▲ 0.4pp</div></div>
+  </div>
+  <div class="grid charts-row">
+    <div class="card"><h3>成本趋势：单条成本 + CPM</h3><div class="desc">7 日</div><div class="chart-wrap tall"><canvas id="costChart"></canvas></div></div>
+    <div class="card"><h3>质量分趋势：四维评分</h3><div class="desc">可读性/客观性/完整性/时效性</div><div class="chart-wrap tall"><canvas id="qualityChart"></canvas></div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>各 Agent Token 与成本占比</h3>
+    <div class="grid charts-row">
+      <div class="chart-wrap"><canvas id="tokenChart"></canvas></div>
+      <div class="chart-wrap"><canvas id="costPieChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  TrendForge 数据看板 · 配套 PRD v1.0 · 数据由 demo/analytics 模块模拟生成 · 看板设计遵循 SQL数据看板设计.md
+</footer>
+
+<script>
+const COLORS={red:'#e74c3c',green:'#27ae60',blue:'#3498db',orange:'#f39c12',purple:'#9b59b6',teal:'#16a085',gray:'#95a5a6',navy:'#34495e'};
+const days=['07-15','07-16','07-17','07-18','07-19','07-20','07-21'];
+Chart.defaults.font.family='-apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+Chart.defaults.font.size=11;
+Chart.defaults.color='#6b7280';
+
+// ===== 北极星 =====
+new Chart(document.getElementById('nsChart'),{type:'line',data:{labels:days,datasets:[{label:'阅读时长(小时)',data:[14200,15100,16800,15900,18200,21500,22840],borderColor:COLORS.blue,backgroundColor:'rgba(52,152,219,.1)',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false}});
+
+// ===== 生产时延 =====
+new Chart(document.getElementById('latencyChart'),{type:'line',data:{labels:days,datasets:[{label:'P50',data:[5.0,4.8,4.5,4.6,4.3,4.1,4.2],borderColor:COLORS.green,tension:.3},{label:'P95',data:[15,14,13,13.5,12.8,12.2,12.5],borderColor:COLORS.orange,tension:.3},{label:'SLA',data:[8,8,8,8,8,8,8],borderColor:COLORS.red,borderDash:[5,5],pointRadius:0}]},options:{responsive:true,maintainAspectRatio:false}});
+
+// ===== Agent 成功率 =====
+new Chart(document.getElementById('agentChart'),{type:'bar',data:{labels:['Planner','Research','Writer','Reviewer','Publisher'],datasets:[{label:'成功',data:[98.4,92.2,95.5,100,98.4],backgroundColor:COLORS.green},{label:'降级',data:[1.6,6.7,3.4,0,1.6],backgroundColor:COLORS.orange},{label:'失败',data:[0,1.1,1.1,0,0],backgroundColor:COLORS.red}]},options:{responsive:true,maintainAspectRatio:false,stacked:true,scales:{x:{stacked:true},y:{stacked:true,max:100}}}});
+
+// ===== 品类生产 =====
+new Chart(document.getElementById('categoryChart'),{type:'bar',data:{labels:['科技','财经','国际','娱乐','体育'],datasets:[{label:'生产量',data:[52,38,22,15,12],backgroundColor:COLORS.blue,yAxisID:'y'},{label:'通过率',data:[82,79,75,80,78],type:'line',borderColor:COLORS.red,yAxisID:'y1',tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left'},y1:{position:'right',min:60,max:100,grid:{display:false}}}}});
+
+// ===== CTR 趋势 =====
+new Chart(document.getElementById('ctrTrendChart'),{type:'line',data:{labels:days,datasets:[{label:'科技',data:[3.8,4.0,4.2,3.9,4.1,4.3,4.5],borderColor:COLORS.red,tension:.3},{label:'财经',data:[3.5,3.6,3.4,3.7,3.8,3.9,3.8],borderColor:COLORS.orange,tension:.3},{label:'国际',data:[2.8,2.9,3.0,3.1,3.0,3.2,3.1],borderColor:COLORS.purple,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{ticks:{callback:v=>v+'%'}}}}});
+
+// ===== 阅读率 vs 完读率 气泡 =====
+new Chart(document.getElementById('readChart'),{type:'bubble',data:{datasets:[{label:'科技',data:[{x:68,y:45,r:18}],backgroundColor:'rgba(231,76,60,.6)'},{label:'财经',data:[{x:65,y:42,r:14}],backgroundColor:'rgba(243,156,18,.6)'},{label:'国际',data:[{x:60,y:38,r:10}],backgroundColor:'rgba(155,89,182,.6)'},{label:'娱乐',data:[{x:72,y:48,r:12}],backgroundColor:'rgba(22,160,133,.6)'},{label:'体育',data:[{x:63,y:40,r:8}],backgroundColor:'rgba(52,73,94,.6)'}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{title:{display:true,text:'阅读率 %'}},y:{title:{display:true,text:'完读率 %'}}}}});
+
+// ===== 字数 vs 完读 =====
+new Chart(document.getElementById('wordChart'),{type:'bar',data:{labels:['<300','300-600','600-1000','1000-1500','>=1500'],datasets:[{label:'完读率',data:[35,42,48,44,38],backgroundColor:COLORS.teal}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{ticks:{callback:v=>v+'%'}}}}});
+
+// ===== 渠道 =====
+new Chart(document.getElementById('channelChart'),{type:'doughnut',data:{labels:['站内Feed','微博','Twitter','RSS','微信'],datasets:[{data:[42,25,15,10,8],backgroundColor:[COLORS.blue,COLORS.red,COLORS.teal,COLORS.orange,COLORS.green]}]},options:{responsive:true,maintainAspectRatio:false}});
+
+// ===== 雷达 =====
+new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels:['CTR','阅读率','质量分','事实一致率','Bad Case率(逆)'],datasets:[{label:'v1.3.0',data:[3.8,0.64,3.9,0.97,0.92],borderColor:COLORS.gray,backgroundColor:'rgba(149,165,166,.2)'},{label:'v2.0.1',data:[4.4,0.66,4.1,0.98,0.97],borderColor:COLORS.red,backgroundColor:'rgba(231,76,60,.2)'}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{suggestedMin:0.3,suggestedMax:1}}}});
+
+// ===== A/B =====
+new Chart(document.getElementById('abChart'),{type:'bar',data:{labels:['07-15','07-16','07-17','07-18','07-19','07-20','07-21'],datasets:[{label:'v1.3.0 (control)',data:[3.7,3.8,3.9,3.8,3.9,3.8,3.9],backgroundColor:'rgba(149,165,166,.6)'},{label:'v2.0.1 (treatment)',data:[4.1,4.3,4.4,4.2,4.5,4.4,4.6],backgroundColor:'rgba(231,76,60,.6)'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{ticks:{callback:v=>v+'%'}}},plugins:{legend:{position:'bottom'}}}});
+
+// ===== 帕累托 =====
+const bcData=[{l:'F 事实',v:18},{l:'H 幻觉',v:14},{l:'Q 质量',v:12},{l:'C 引用',v:9},{l:'D 数据',v:7},{l:'U 体验',v:5},{l:'G 合规',v:3}];
+const bcTotal=bcData.reduce((s,d)=>s+d.v,0);let cum=0;const cumArr=bcData.map(d=>{cum+=d.v;return Math.round(cum/bcTotal*100)});
+new Chart(document.getElementById('paretoChart'),{data:{labels:bcData.map(d=>d.l),datasets:[{type:'bar',label:'数量',data:bcData.map(d=>d.v),backgroundColor:COLORS.blue},{type:'line',label:'累计占比%',data:cumArr,borderColor:COLORS.red,yAxisID:'y1',tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left'},y1:{position:'right',min:0,max:100,grid:{display:false}}}}});
+
+// ===== BC 趋势 =====
+new Chart(document.getElementById('bcTrendChart'),{type:'line',data:{labels:days,datasets:[{label:'严重',data:[3,2,4,2,1,2,1],borderColor:COLORS.red,backgroundColor:'rgba(231,76,60,.1)',fill:true,tension:.3},{label:'一般',data:[8,7,9,6,5,5,4],borderColor:COLORS.orange,backgroundColor:'rgba(243,156,18,.1)',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false}});
+
+// ===== 成本 =====
+new Chart(document.getElementById('costChart'),{type:'line',data:{labels:days,datasets:[{label:'单条成本(¥)',data:[0.40,0.38,0.36,0.35,0.33,0.32,0.31],borderColor:COLORS.green,yAxisID:'y',tension:.3},{label:'CPM(¥)',data:[0.04,0.038,0.035,0.034,0.032,0.031,0.030],borderColor:COLORS.purple,yAxisID:'y1',tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{position:'left'},y1:{position:'right',grid:{display:false}}}}});
+
+// ===== 质量四维 =====
+new Chart(document.getElementById('qualityChart'),{type:'line',data:{labels:days,datasets:[{label:'可读性',data:[4.0,4.0,4.1,4.1,4.1,4.2,4.2],borderColor:COLORS.blue,tension:.3},{label:'客观性',data:[3.8,3.9,3.9,4.0,4.0,4.0,4.1],borderColor:COLORS.teal,tension:.3},{label:'完整性',data:[3.7,3.8,3.8,3.9,3.9,4.0,4.0],borderColor:COLORS.orange,tension:.3},{label:'时效性',data:[4.4,4.4,4.5,4.5,4.5,4.5,4.6],borderColor:COLORS.red,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{min:3,max:5}}}});
+
+// ===== Token 占比 =====
+new Chart(document.getElementById('tokenChart'),{type:'pie',data:{labels:['Planner','Research','Writer','Reviewer','Publisher'],datasets:[{data:[8,15,55,18,4],backgroundColor:[COLORS.blue,COLORS.teal,COLORS.red,COLORS.orange,COLORS.green]}]},options:{responsive:true,maintainAspectRatio:false}});
+
+// ===== 成本占比 =====
+new Chart(document.getElementById('costPieChart'),{type:'pie',data:{labels:['Planner','Research','Writer','Reviewer','Publisher'],datasets:[{data:[5,12,62,18,3],backgroundColor:[COLORS.blue,COLORS.teal,COLORS.red,COLORS.orange,COLORS.green]}]},options:{responsive:true,maintainAspectRatio:false}});
+
+// ===== Tabs =====
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById(t.dataset.tab).classList.add('active');
+}));
+</script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+openai>=1.0.0   # 可选：仅在 USE_REAL_LLM=true 时需要
+# 以下为 Demo 运行所需（Python 3.10+ 标准库即可，无强制第三方依赖）

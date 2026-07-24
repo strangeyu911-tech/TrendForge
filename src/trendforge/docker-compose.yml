@@ -1,0 +1,24 @@
+# TrendForge 本地 / 自托管一键部署
+# docker-compose up -d  →  http://localhost:8000/docs
+version: "3.9"
+services:
+  trendforge:
+    build: .
+    container_name: trendforge
+    ports:
+      - "8000:8000"
+    volumes:
+      # 持久化 SQLite + Chroma 向量库（重启不丢数据）
+      - ./data:/app/data
+    env_file:
+      - .env
+    environment:
+      - TF_HOST=0.0.0.0
+      - TF_PORT=8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
