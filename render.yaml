@@ -1,16 +1,19 @@
-# Render Blueprint — FluxPress 最低成本部署（免费层，2分钟拿公网地址）
+# Render Blueprint — FluxPress 最低成本部署（免费层，Docker 构建）
 # 使用：Render 控制台 New > Blueprint，选本仓库，Render 会在【仓库根目录】自动读取此文件
-# 注意：Blueprint 只认仓库根目录(repo root)的 render.yaml，本文件必须放在仓库根，
-#       不要放在 src/trendforge/ 等子目录里，否则 Blueprint 检测不到。
+# 注意：Blueprint 只认仓库根目录(repo root)的 render.yaml，本文件必须放在仓库根。
+
 services:
   - type: web
     name: fluxpress-api
     runtime: docker
-    # rootDir 是 Docker 构建上下文目录，也是 dockerfilePath 的基准目录。
-    # Dockerfile / requirements.txt / api/ / db.py / data/ 全部在 src/trendforge/ 下，
-    # 所以构建上下文必须是 src/trendforge；dockerfilePath 相对 rootDir，./Dockerfile => src/trendforge/Dockerfile。
-    rootDir: src
-    dockerfilePath: ./Dockerfile
+    # 重要（踩坑记录）：
+    # 按 Render 官方 Blueprint 规范，dockerfilePath / dockerContext 都是“相对仓库根(repo root)”解析，
+    # 与 rootDir 无关。所以必须用完整路径，不能写 ./Dockerfile（那会被当成仓库根的 Dockerfile，找不到）。
+    # - dockerfilePath: 指向 src/trendforge/Dockerfile（已确认存在）
+    # - dockerContext: 指向 src/trendforge，因为 Dockerfile 里 COPY requirements.txt / COPY . .
+    #   依赖该目录下的 requirements.txt / api/ / db.py / data/（数据已打包进镜像）。
+    dockerfilePath: src/trendforge/Dockerfile
+    dockerContext: src/trendforge
     plan: free
     healthCheckPath: /api/health
     autoDeploy: true
@@ -25,7 +28,7 @@ services:
         sync: false
     # 免费层说明：
     # - 512MB 内存 / 15分钟无请求会休眠(冷启动~30s) / 无持久磁盘
-    # - 数据(243篇新闻+chroma向量)已打包进镜像，/search /stats 立即可用
+    # - 数据(已采集的新闻+chroma向量)在构建时打包进镜像，/search /stats 立即可用
     # - /generate 调真实 GLM，需填 TF_GLM_API_KEY
     # - 升级付费层可挂载 disk 实现数据持久增长：
     #   disk:
