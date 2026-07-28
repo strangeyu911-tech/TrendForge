@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,201 +7,238 @@
 <meta name="description" content="Multi-Agent + RAG + Prompt 工程 + Workflow + 数据闭环 — 端到端 AI 内容生产系统">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  :root{
-    --bg:#0b1020; --bg2:#0f1530;
-    --surface:#ffffff; --surface-2:#f7f8fc;
-    --ink:#0f172a; --ink-2:#475569; --ink-3:#94a3b8;
-    --line:#e6e8f0;
-    --brand:#6366f1; --brand-2:#8b5cf6; --brand-3:#ec4899;
-    --cyan:#06b6d4; --emerald:#10b981; --amber:#f59e0b; --rose:#f43f5e;
-    --grad:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#ec4899 100%);
-    --grad-soft:linear-gradient(135deg,#eef2ff 0%,#faf5ff 50%,#fdf2f8 100%);
-    --shadow-sm:0 1px 2px rgba(15,23,42,.06);
-    --shadow:0 4px 16px rgba(15,23,42,.08);
-    --shadow-lg:0 20px 50px rgba(15,23,42,.12);
-    --radius:16px; --radius-sm:10px;
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth;scroll-padding-top:80px}
-  body{font-family:'Inter','Noto Sans SC',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;background:var(--surface);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-  a{color:inherit;text-decoration:none}
-  .mono{font-family:'JetBrains Mono',monospace}
+/* =====================================================================
+   TrendForge Portal — Forge design system (unified with Console)
+   Warm paper / warm ink · ember accent · Space Grotesk / IBM Plex / Noto Sans SC
+   ===================================================================== */
+:root{
+  --ember:#d95f1e; --ember-bright:#ee7842; --ember-deep:#b03f00; --ember-soft:#ffede0;
+  --teal:#198586; --teal-soft:#d9f5f5;
+  --green:#3aa460; --green-soft:#dffae5;
+  --amber:#e8ab3e; --amber-soft:#fff2d0;
+  --red:#df3c3a; --red-soft:#ffe8e4;
+  --violet:#8864c0; --violet-soft:#f6ecff;
 
-  /* ===== Nav ===== */
-  nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--line);transition:.3s}
-  .nav-inner{max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-  .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
-  .logo-mark{width:32px;height:32px;border-radius:9px;background:var(--grad);display:grid;place-items:center;color:#fff;font-size:16px;box-shadow:0 4px 12px rgba(99,102,241,.4)}
-  .nav-links{display:flex;gap:6px;align-items:center}
-  .nav-links a{padding:8px 14px;border-radius:8px;font-size:14px;font-weight:500;color:var(--ink-2);transition:.2s}
-  .nav-links a:hover{background:var(--surface-2);color:var(--brand)}
-  .nav-cta{background:var(--ink);color:#fff !important;padding:8px 16px !important;border-radius:8px;font-weight:600}
-  .nav-cta:hover{background:var(--brand) !important;transform:translateY(-1px)}
-  @media(max-width:768px){.nav-links{display:none}}
+  --bg-base:#f9f6f2; --bg-sunken:#f3f0ea; --surface:#ffffff; --surface-2:#fdfbf9;
+  --line:#e1ddd8; --line-strong:#cbc7c0;
+  --ink:#241e1a; --ink-soft:#5d5751; --ink-faint:#8b857f; --on-accent:#fffbf4;
 
-  /* ===== Hero ===== */
-  .hero{position:relative;padding:140px 24px 90px;overflow:hidden;background:var(--bg);color:#fff}
-  .hero::before{content:'';position:absolute;inset:0;background:
-    radial-gradient(900px 500px at 15% 0%,rgba(99,102,241,.35),transparent 60%),
-    radial-gradient(700px 500px at 85% 10%,rgba(236,72,153,.28),transparent 55%),
-    radial-gradient(600px 400px at 50% 100%,rgba(6,182,212,.18),transparent 60%)}
-  .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 60% at 50% 30%,#000,transparent)}
-  .hero-inner{position:relative;max-width:1100px;margin:0 auto;text-align:center}
-  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);font-size:13px;font-weight:500;margin-bottom:28px;backdrop-filter:blur(10px)}
-  .pill .dot{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 12px #34d399;animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-  h1.hero-title{font-size:clamp(36px,6vw,68px);font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-bottom:24px}
-  .hero-title .grad{background:linear-gradient(120deg,#a5b4fc,#f0abfc,#67e8f9);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .hero-sub{font-size:clamp(16px,2.2vw,20px);color:rgba(255,255,255,.7);max-width:680px;margin:0 auto 40px;line-height:1.6}
-  .hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:64px}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 26px;border-radius:12px;font-weight:600;font-size:15px;transition:.25s;cursor:pointer;border:none}
-  .btn-primary{background:var(--grad);color:#fff;box-shadow:0 10px 30px rgba(99,102,241,.45)}
-  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(99,102,241,.55)}
-  .btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(10px)}
-  .btn-ghost:hover{background:rgba(255,255,255,.15);transform:translateY(-2px)}
-  .btn-dark{background:var(--ink);color:#fff}
-  .btn-dark:hover{background:var(--brand);transform:translateY(-1px)}
+  --font-display:"Space Grotesk","Noto Sans SC",system-ui,sans-serif;
+  --font-ui:"IBM Plex Sans","Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 
-  .hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:900px;margin:0 auto}
-  .stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;backdrop-filter:blur(12px)}
-  .stat .v{font-size:28px;font-weight:800;background:linear-gradient(120deg,#fff,#cbd5e1);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .stat .l{font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;letter-spacing:.5px;text-transform:uppercase}
+  --r-xs:6px; --r-sm:9px; --r-md:13px; --r-lg:18px; --r-xl:26px; --r-pill:999px;
+  --shadow-xs:0 1px 2px rgba(54,44,36,.06);
+  --shadow-sm:0 1px 3px rgba(54,44,36,.08),0 1px 2px rgba(54,44,36,.05);
+  --shadow-md:0 6px 16px -4px rgba(54,44,36,.12),0 2px 6px -2px rgba(54,44,36,.08);
+  --shadow-lg:0 18px 40px -12px rgba(54,44,36,.2),0 8px 18px -8px rgba(54,44,36,.12);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --t-fast:140ms; --t-med:260ms;
+  --topbar-h:62px; --content-max:1180px;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{font-family:var(--font-ui);font-size:15px;line-height:1.6;color:var(--ink);background:var(--bg-base);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;line-height:1.12;letter-spacing:-.01em;color:var(--ink)}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--ember-soft);color:var(--ember-deep)}
 
-  /* ===== Section base ===== */
-  section{padding:90px 24px}
-  .container{max-width:1200px;margin:0 auto}
-  .sec-head{text-align:center;max-width:720px;margin:0 auto 56px}
-  .sec-tag{display:inline-block;padding:5px 12px;border-radius:999px;background:var(--grad-soft);color:var(--brand);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
-  h2{font-size:clamp(28px,4vw,42px);font-weight:800;letter-spacing:-.02em;line-height:1.15;margin-bottom:16px}
-  .sec-desc{font-size:17px;color:var(--ink-2);line-height:1.7}
-  .light h2{color:#fff}
-  .light .sec-desc{color:rgba(255,255,255,.7)}
+/* ===== Top nav (Forge) ===== */
+.topnav{position:fixed;top:0;left:0;right:0;z-index:100;height:var(--topbar-h);display:flex;align-items:center;gap:var(--r-sm);padding:0 24px;background:color-mix(in srgb,var(--bg-base) 82%,transparent);backdrop-filter:blur(12px) saturate(1.4);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;font-family:var(--font-display)}
+.brand__mark{width:32px;height:32px;border-radius:9px;background:var(--ember);display:grid;place-items:center;color:#fff;font-size:16px;box-shadow:0 4px 12px rgba(217,95,30,.4)}
+.brand b{color:var(--ember)}
+.nav-links{display:flex;gap:4px;align-items:center;margin-left:14px}
+.nav-links a{padding:8px 14px;border-radius:var(--r-sm);font-size:14px;font-weight:500;color:var(--ink-soft);transition:background var(--t-fast) var(--ease-out),color var(--t-fast) var(--ease-out)}
+.nav-links a:hover{background:var(--surface);color:var(--ink)}
+.nav-cta{background:var(--ember);color:#fff;padding:8px 16px;border-radius:var(--r-sm);font-weight:600;margin-left:6px;transition:background var(--t-fast) var(--ease-out),transform var(--t-fast) var(--ease-out)}
+.nav-cta:hover{background:var(--ember-bright);transform:translateY(-1px)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+@media(max-width:860px){.nav-links{display:none}}
 
-  /* ===== Architecture ===== */
-  #arch{background:var(--surface-2)}
-  .arch-canvas{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:32px;box-shadow:var(--shadow-lg);overflow-x:auto}
-  .arch-canvas svg{display:block;margin:0 auto;min-width:760px}
-  .agent-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:40px}
-  .agent-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;transition:.3s;position:relative;overflow:hidden}
-  .agent-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--ag-color,var(--brand))}
-  .agent-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:transparent}
-  .agent-card .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;margin-bottom:14px;background:var(--ag-bg,var(--grad-soft))}
-  .agent-card h4{font-size:16px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
-  .agent-card .ver{font-size:11px;color:var(--ink-3);font-weight:500}
-  .agent-card p{font-size:13px;color:var(--ink-2);margin-bottom:10px}
-  .agent-card .io{font-size:11px;color:var(--ink-3);font-family:'JetBrains Mono',monospace;border-top:1px dashed var(--line);padding-top:10px}
-  .agent-card .io b{color:var(--ink-2);font-weight:600}
+/* data source pill */
+.src-pill{border:1px solid var(--line);background:var(--bg-sunken);color:var(--ink-soft);font:600 12px/1 var(--font-mono);padding:7px 12px;border-radius:var(--r-pill);cursor:pointer;transition:all var(--t-fast) var(--ease-out);white-space:nowrap;letter-spacing:.03em;display:inline-flex;align-items:center;gap:6px}
+.src-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint)}
+.src-pill.is-live{color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,var(--line))}
+.src-pill.is-live .dot{background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
 
-  /* ===== Dashboard ===== */
-  .dash-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
-  .kpi{grid-column:span 3;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-sm);transition:.25s}
-  .kpi:hover{box-shadow:var(--shadow);transform:translateY(-2px)}
-  .kpi .label{font-size:13px;color:var(--ink-3);font-weight:500;display:flex;align-items:center;gap:8px}
-  .kpi .label .dotc{width:8px;height:8px;border-radius:50%}
-  .kpi .val{font-size:30px;font-weight:800;margin-top:8px;letter-spacing:-.02em}
-  .kpi .delta{font-size:12px;font-weight:600;margin-top:6px;display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:6px}
-  .delta.up{color:#e74c3c;background:#fdecea}     /* 涨=红 */
-  .delta.down{color:#16a085;background:#e6f9ee}   /* 跌=绿 */
-  .panel-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;box-shadow:var(--shadow-sm)}
-  .panel-card h3{font-size:15px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
-  .panel-card .sub{font-size:12px;color:var(--ink-3);margin-bottom:16px}
-  .span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-4{grid-column:span 4}.span-12{grid-column:span 12}
-  .chart-box{position:relative;height:260px}
-  .chart-box.tall{height:300px}
-  @media(max-width:900px){.kpi,.span-6,.span-8,.span-4,.span-12{grid-column:span 12}}
+/* ===== Hero ===== */
+.hero{position:relative;padding:140px 24px 84px;overflow:hidden;background:var(--bg-sunken);border-bottom:1px solid var(--line)}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(900px 420px at 12% 0%,rgba(217,95,30,.14),transparent 60%),radial-gradient(700px 420px at 88% 8%,rgba(25,133,134,.12),transparent 55%)}
+.hero-inner{position:relative;max-width:1040px;margin:0 auto;text-align:center}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:var(--r-pill);background:var(--ember-soft);color:var(--ember-deep);font-size:13px;font-weight:600;margin-bottom:26px}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:var(--ember);box-shadow:0 0 0 3px color-mix(in srgb,var(--ember) 25%,transparent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+h1.hero-title{font-size:clamp(34px,5.5vw,62px);font-weight:700;letter-spacing:-.03em;line-height:1.06;margin-bottom:22px}
+.hero-title .grad{background:linear-gradient(120deg,var(--ember),var(--violet));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hero-sub{font-size:clamp(15px,2vw,19px);color:var(--ink-soft);max-width:660px;margin:0 auto 36px;line-height:1.65}
+.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:56px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 24px;border-radius:var(--r-sm);font-weight:600;font-size:15px;font-family:var(--font-ui);cursor:pointer;border:1px solid transparent;transition:all var(--t-fast) var(--ease-out);white-space:nowrap}
+.btn--primary{background:var(--ember);color:var(--on-accent);box-shadow:var(--shadow-sm)}
+.btn--primary:hover{background:var(--ember-bright);transform:translateY(-2px);box-shadow:var(--shadow-md)}
+.btn--ghost{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.btn--ghost:hover{border-color:var(--line-strong);background:var(--surface-2)}
 
-  .funnel{display:flex;flex-direction:column;gap:10px;margin-top:8px}
-  .funnel-row{display:flex;align-items:center;gap:12px}
-  .funnel-label{width:84px;font-size:13px;color:var(--ink-2);font-weight:500}
-  .funnel-bar{flex:1;height:30px;border-radius:7px;display:flex;align-items:center;padding:0 12px;color:#fff;font-size:12px;font-weight:700;min-width:50px;transition:.6s}
-  .funnel-val{width:96px;text-align:right;font-size:13px;font-weight:700;color:var(--ink)}
+.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:880px;margin:0 auto}
+.hstat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow-xs);text-align:left}
+.hstat .v{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-.02em;line-height:1;background:linear-gradient(120deg,var(--ember),var(--violet));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.hstat .l{font-size:12px;color:var(--ink-faint);margin-top:6px}
+.hstat .s{font-size:11px;color:var(--ink-faint);margin-top:2px;font-family:var(--font-mono)}
 
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line)}
-  th{color:var(--ink-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-  tr:hover td{background:var(--surface-2)}
-  .pill-tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700}
-  .pt-pass{background:#dcfce7;color:#15803d}.pt-fail{background:#fee2e2;color:#b91c1c}.pt-warn{background:#fef3c7;color:#b45309}
+/* ===== Section base ===== */
+section{padding:84px 24px}
+.container{max-width:var(--content-max);margin:0 auto}
+.sec-head{text-align:center;max-width:720px;margin:0 auto 52px}
+.sec-tag{display:inline-block;padding:5px 12px;border-radius:var(--r-pill);background:var(--ember-soft);color:var(--ember-deep);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px}
+h2{font-size:clamp(26px,3.6vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1.15;margin-bottom:14px}
+.sec-desc{font-size:16px;color:var(--ink-soft);line-height:1.7}
 
-  /* ===== Tech highlights ===== */
-  #tech{background:var(--bg);color:#fff;position:relative;overflow:hidden}
-  #tech::before{content:'';position:absolute;inset:0;background:radial-gradient(800px 400px at 80% 20%,rgba(139,92,246,.25),transparent 60%)}
-  .tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;position:relative}
-  .tech-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius);padding:26px;backdrop-filter:blur(10px);transition:.3s}
-  .tech-card:hover{background:rgba(255,255,255,.08);transform:translateY(-4px);border-color:rgba(139,92,246,.4)}
-  .tech-card .num{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--brand-2);font-weight:600;margin-bottom:12px}
-  .tech-card h4{font-size:17px;font-weight:700;margin-bottom:8px}
-  .tech-card p{font-size:13px;color:rgba(255,255,255,.65);line-height:1.6}
-  .tech-card .metric{margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.5)}
-  .tech-card .metric b{color:#a5b4fc;font-weight:700}
+/* ===== Card / panel (Forge) ===== */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-xs);overflow:hidden}
+.card__head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 22px;border-bottom:1px solid var(--line)}
+.card__head h3{font-size:17px}
+.card__head .sub{font-size:12px;color:var(--ink-faint)}
+.card__body{padding:22px}
 
-  /* ===== Docs ===== */
-  #docs{background:var(--surface-2)}
-  .doc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-  .doc-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;transition:.3s;display:flex;flex-direction:column;gap:8px}
-  .doc-card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--brand)}
-  .doc-card .dtype{font-size:11px;font-weight:700;color:var(--brand);letter-spacing:1px;text-transform:uppercase}
-  .doc-card h4{font-size:15px;font-weight:700}
-  .doc-card p{font-size:13px;color:var(--ink-2);flex:1}
-  .doc-card .meta{font-size:12px;color:var(--ink-3);font-family:'JetBrains Mono',monospace}
+/* KPI grid */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;position:relative;overflow:hidden;transition:transform var(--t-fast) var(--ease-out),box-shadow var(--t-fast) var(--ease-out),border-color var(--t-fast) var(--ease-out)}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-md);border-color:var(--line-strong)}
+.stat__label{font-size:13px;color:var(--ink-faint);display:flex;align-items:center;gap:8px}
+.stat__value{font-family:var(--font-display);font-weight:700;font-size:30px;margin-top:8px;letter-spacing:-.02em;line-height:1}
+.stat__value small{font-size:15px;font-weight:600;color:var(--ink-soft)}
+.stat__sub{font-size:12px;color:var(--ink-faint);margin-top:6px;font-family:var(--font-mono)}
+@media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
 
-  /* ===== Demo CTA ===== */
-  #demo{background:var(--bg);color:#fff;text-align:center;position:relative;overflow:hidden}
-  #demo::before{content:'';position:absolute;inset:0;background:radial-gradient(600px 300px at 50% 50%,rgba(99,102,241,.3),transparent 70%)}
-  .demo-box{position:relative;max-width:760px;margin:0 auto;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:28px;text-align:left;box-shadow:var(--shadow-lg)}
-  .demo-box .dots{display:flex;gap:7px;margin-bottom:18px}
-  .demo-box .dots span{width:12px;height:12px;border-radius:50%;background:#374151}
-  .demo-box .dots span:nth-child(1){background:#f87171}.demo-box .dots span:nth-child(2){background:#fbbf24}.demo-box .dots span:nth-child(3){background:#34d399}
-  .demo-box pre{font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;color:#e2e8f0;overflow-x:auto}
-  .demo-box pre .c{color:#64748b}.demo-box pre .ok{color:#34d399}.demo-box pre .k{color:#a5b4fc}.demo-box pre .s{color:#fcd34d}
+/* dashboard grid */
+.dash-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+.span-3{grid-column:span 3}.span-4{grid-column:span 4}.span-6{grid-column:span 6}.span-8{grid-column:span 8}.span-12{grid-column:span 12}
+@media(max-width:900px){.span-3,.span-4,.span-6,.span-8,.span-12{grid-column:span 12}}
 
-  /* ===== Footer ===== */
-  footer{background:#070b1a;color:rgba(255,255,255,.5);padding:40px 24px;text-align:center;font-size:13px}
-  footer .fl{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:16px}
-  footer a:hover{color:#fff}
+/* funnel */
+.funnel{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.funnel-row{display:flex;align-items:center;gap:12px}
+.funnel-label{width:92px;font-size:13px;color:var(--ink-soft);font-weight:500}
+.funnel-bar{height:30px;border-radius:7px;display:flex;align-items:center;padding:0 12px;color:#fff;font-size:12px;font-weight:700;min-width:54px;transition:width .6s var(--ease-out)}
+.funnel-val{width:90px;text-align:right;font-size:13px;font-weight:700;font-family:var(--font-mono)}
 
-  /* reveal anim */
-  .reveal{opacity:0;transform:translateY(24px);transition:.7s cubic-bezier(.2,.7,.2,1)}
-  .reveal.in{opacity:1;transform:none}
+/* chart box */
+.chart-box{position:relative;height:260px}
+.chart-box.tall{height:300px}
+
+/* tables */
+.table-wrap{overflow-x:auto;border-radius:var(--r-md)}
+table.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;font-weight:600;color:var(--ink-faint);font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:11px 14px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:13px 14px;border-bottom:1px solid var(--line);color:var(--ink);vertical-align:middle}
+.tbl tbody tr{transition:background var(--t-fast) var(--ease-out)}
+.tbl tbody tr:hover{background:var(--surface-2)}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl .mono{font-family:var(--font-mono);font-size:12px;color:var(--ink-soft)}
+.tbl .strong{font-weight:600}
+
+/* badges / chips */
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:var(--r-pill);line-height:1.4;font-family:var(--font-mono)}
+.badge--ok{background:var(--green-soft);color:var(--green)}
+.badge--warn{background:var(--amber-soft);color:var(--amber)}
+.badge--bad{background:var(--red-soft);color:var(--red)}
+.badge--exp{background:var(--violet-soft);color:var(--violet)}
+.badge--muted{background:var(--bg-sunken);color:var(--ink-soft);border:1px solid var(--line)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:3px 10px;border-radius:var(--r-pill);background:var(--bg-sunken);color:var(--ink-soft);border:1px solid var(--line)}
+.chip--cat{background:var(--teal-soft);color:var(--teal);border-color:transparent;font-family:var(--font-mono);font-size:11px}
+
+/* agent cards (arch) */
+.agent-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px;margin-top:36px}
+.agent-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px;transition:transform var(--t-fast) var(--ease-out),box-shadow var(--t-fast) var(--ease-out);position:relative;overflow:hidden}
+.agent-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--ag-color,var(--ember))}
+.agent-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:transparent}
+.agent-card .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;margin-bottom:14px;background:var(--ag-bg,var(--ember-soft))}
+.agent-card h4{font-size:16px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.agent-card .ver{font-size:11px;color:var(--ink-faint);font-weight:500;font-family:var(--font-mono)}
+.agent-card p{font-size:13px;color:var(--ink-soft);margin-bottom:10px}
+.agent-card .io{font-size:11px;color:var(--ink-faint);font-family:var(--font-mono);border-top:1px dashed var(--line);padding-top:10px}
+.agent-card .io b{color:var(--ink-soft);font-weight:600}
+
+/* tech cards */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px}
+.tech-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:26px;transition:transform var(--t-fast) var(--ease-out),box-shadow var(--t-fast) var(--ease-out)}
+.tech-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--line-strong)}
+.tech-card .num{font-family:var(--font-mono);font-size:13px;color:var(--ember);font-weight:600;margin-bottom:12px}
+.tech-card h4{font-size:17px;font-weight:700;margin-bottom:8px}
+.tech-card p{font-size:13px;color:var(--ink-soft);line-height:1.65}
+.tech-card .metric{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;color:var(--ink-faint)}
+.tech-card .metric b{color:var(--ember-deep);font-weight:700;font-family:var(--font-mono)}
+
+/* doc cards */
+.doc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.doc-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px;transition:transform var(--t-fast) var(--ease-out),box-shadow var(--t-fast) var(--ease-out);display:flex;flex-direction:column;gap:8px}
+.doc-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--ember)}
+.doc-card .dtype{font-size:11px;font-weight:700;color:var(--ember);letter-spacing:.08em;text-transform:uppercase}
+.doc-card h4{font-size:15px;font-weight:700}
+.doc-card p{font-size:13px;color:var(--ink-soft);flex:1}
+.doc-card .meta{font-size:12px;color:var(--ink-faint);font-family:var(--font-mono)}
+
+/* demo box */
+.demo-box{position:relative;max-width:760px;margin:0 auto;background:var(--bg-sunken);border:1px solid var(--line);border-radius:var(--r-lg);padding:24px;text-align:left;box-shadow:var(--shadow-md);font-family:var(--font-mono);font-size:13px;line-height:1.7;color:var(--ink-soft);overflow-x:auto}
+.demo-box .dots{display:flex;gap:7px;margin-bottom:16px}
+.demo-box .dots span{width:12px;height:12px;border-radius:50%;background:var(--line-strong)}
+.demo-box .dots span:nth-child(1){background:var(--red)}
+.demo-box .dots span:nth-child(2){background:var(--amber)}
+.demo-box .dots span:nth-child(3){background:var(--green)}
+.demo-box .c{color:var(--ink-faint)}.demo-box .ok{color:var(--green)}.demo-box .k{color:var(--ember)}.demo-box .s{color:var(--violet)}
+
+/* footer */
+footer{background:var(--bg-sunken);color:var(--ink-soft);padding:40px 24px;text-align:center;font-size:13px;border-top:1px solid var(--line)}
+footer .fl{display:flex;justify-content:center;gap:24px;flex-wrap:wrap;margin-bottom:14px}
+footer a:hover{color:var(--ember)}
+
+/* loading / empty */
+.loading{display:flex;align-items:center;gap:10px;color:var(--ink-soft);padding:24px 0;font-size:14px}
+.spinner{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--ember);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{padding:32px 16px;text-align:center;color:var(--ink-faint);font-size:13px}
+
+/* reveal */
+.reveal{opacity:0;transform:translateY(22px);transition:.7s var(--ease-out)}
+.reveal.in{opacity:1;transform:none}
 </style>
 </head>
 <body>
 
-<!-- ===== Nav ===== -->
-<nav id="nav">
-  <div class="nav-inner">
-    <a href="#top" class="logo"><span class="logo-mark">⚡</span> TrendForge</a>
-    <div class="nav-links">
-      <a href="#arch">架构</a>
-      <a href="#dash">数据看板</a>
-      <a href="#tech">技术亮点</a>
-      <a href="#docs">文档</a>
-      <a href="console/">运营控制台</a>
-      <a href="https://trendforge-api-h7n6.onrender.com/docs" class="nav-cta" target="_blank" rel="noopener">API 文档</a>
-    </div>
+<!-- ===== Top nav ===== -->
+<header class="topnav">
+  <a href="#top" class="brand"><span class="brand__mark">⚡</span> Trend<b>Forge</b></a>
+  <nav class="nav-links">
+    <a href="#arch">架构</a>
+    <a href="#dash">数据看板</a>
+    <a href="#tech">技术亮点</a>
+    <a href="#docs">文档</a>
+    <a href="console/">运营控制台</a>
+  </nav>
+  <div class="nav-right">
+    <button class="src-pill" id="srcPill" title="点击在 实时 / 离线 间切换"><span class="dot"></span> <span id="srcText">连接中…</span></button>
+    <a href="https://trendforge-api-h7n6.onrender.com/docs" class="nav-cta" target="_blank" rel="noopener">API 文档</a>
   </div>
-</nav>
+</header>
 
 <!-- ===== Hero ===== -->
 <header class="hero" id="top">
-  <div class="hero-grid"></div>
   <div class="hero-inner">
     <div class="pill"><span class="dot"></span> AI Native · Multi-Agent · 端到端自动化</div>
     <h1 class="hero-title">让 AI 接管<br><span class="grad">全球热点内容生产</span></h1>
-    <p class="hero-sub">5 个 Agent 协作 · RAG 实时知识库 · Prompt 版本与 A/B 实验 · Workflow 自动编排 · 数据闭环驱动持续优化。从热点信号到多渠道发布，端到端平均 4 分钟。</p>
+    <p class="hero-sub">5 个 Agent 协作 · RAG 实时知识库 · Prompt 版本与 A/B 实验 · Workflow 自动编排 · 数据闭环驱动持续优化。从热点信号到多渠道发布，端到端自动化。</p>
     <div class="hero-cta">
-      <a href="#arch" class="btn btn-primary">查看系统架构 →</a>
-      <a href="#dash" class="btn btn-ghost">数据看板</a>
+      <a href="#arch" class="btn btn--primary">查看系统架构 →</a>
+      <a href="#dash" class="btn btn--ghost">实时数据看板</a>
     </div>
-    <div class="hero-stats">
-      <div class="stat"><div class="v">4 min</div><div class="l">端到端 P50</div></div>
-      <div class="stat"><div class="v">≤ 2%</div><div class="l">事实错误率</div></div>
-      <div class="stat"><div class="v">+15%</div><div class="l">CTR 提升</div></div>
-      <div class="stat"><div class="v">¥0.31</div><div class="l">单条成本</div></div>
-      <div class="stat"><div class="v">≤ 3 天</div><div class="l">Prompt 迭代</div></div>
+    <div class="hero-stats" id="heroStats">
+      <div class="hstat"><div class="v" id="hero-kb">—</div><div class="l">知识库文档</div><div class="s" id="hero-kb-s">loading…</div></div>
+      <div class="hstat"><div class="v" id="hero-chunks">—</div><div class="l">向量块</div><div class="s" id="hero-chunks-s"></div></div>
+      <div class="hstat"><div class="v" id="hero-prod">—</div><div class="l">本周生产内容</div><div class="s" id="hero-prod-s"></div></div>
+      <div class="hstat"><div class="v" id="hero-cost">—</div><div class="l">平均单篇成本</div><div class="s" id="hero-cost-s"></div></div>
     </div>
   </div>
 </header>
@@ -214,208 +251,104 @@
       <h2>五 Agent 协作流水线</h2>
       <p class="sec-desc">契约驱动、无状态、可插拔。每个 Agent 单一职责，通过结构化 Schema 通信，独立可替换模型，全链路 Trace 可观测。</p>
     </div>
-
-    <div class="arch-canvas reveal">
-      <svg viewBox="0 0 1000 360" xmlns="http://www.w3.org/2000/svg" font-family="inherit" font-size="12">
+    <div class="card reveal" style="padding:28px;overflow-x:auto">
+      <svg viewBox="0 0 1000 200" xmlns="http://www.w3.org/2000/svg" font-family="var(--font-ui)" font-size="12" style="display:block;margin:0 auto;min-width:760px">
         <defs>
-          <marker id="a1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#94a3b8"/></marker>
-          <marker id="a1r" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#f43f5e"/></marker>
-          <linearGradient id="gP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef2ff"/><stop offset="1" stop-color="#e0e7ff"/></linearGradient>
-          <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecfeff"/><stop offset="1" stop-color="#cffafe"/></linearGradient>
-          <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#faf5ff"/><stop offset="1" stop-color="#f3e8ff"/></linearGradient>
-          <linearGradient id="gRV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ecfdf5"/><stop offset="1" stop-color="#d1fae5"/></linearGradient>
-          <linearGradient id="gPB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffbeb"/><stop offset="1" stop-color="#fef3c7"/></linearGradient>
+          <marker id="ar" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#8b857f"/></marker>
+          <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#df3c3a"/></marker>
+          <linearGradient id="gP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffede0"/><stop offset="1" stop-color="#fbe2d2"/></linearGradient>
+          <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9f5f5"/><stop offset="1" stop-color="#c4ecec"/></linearGradient>
+          <linearGradient id="gW" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6ecff"/><stop offset="1" stop-color="#ecdcff"/></linearGradient>
+          <linearGradient id="gRV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dffae5"/><stop offset="1" stop-color="#c8f1d4"/></linearGradient>
+          <linearGradient id="gPB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff2d0"/><stop offset="1" stop-color="#ffe6b0"/></linearGradient>
         </defs>
-        <!-- signals -->
-        <text x="30" y="24" fill="#64748b" font-size="11" font-weight="600">热点信号源</text>
-        <g font-size="11">
-          <rect x="30" y="34" width="92" height="26" rx="6" fill="#eef2ff" stroke="#6366f1"/><text x="76" y="51" text-anchor="middle">微博热搜</text>
-          <rect x="130" y="34" width="92" height="26" rx="6" fill="#eef2ff" stroke="#6366f1"/><text x="176" y="51" text-anchor="middle">Twitter</text>
-          <rect x="230" y="34" width="92" height="26" rx="6" fill="#eef2ff" stroke="#6366f1"/><text x="276" y="51" text-anchor="middle">新闻 RSS</text>
-          <rect x="330" y="34" width="92" height="26" rx="6" fill="#eef2ff" stroke="#6366f1"/><text x="376" y="51" text-anchor="middle">Google News</text>
-        </g>
-        <line x1="226" y1="60" x2="226" y2="86" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
-
-        <!-- pipeline -->
         <g>
-          <rect x="40" y="90" width="160" height="92" rx="14" fill="url(#gP)" stroke="#6366f1" stroke-width="2"/>
-          <text x="120" y="116" text-anchor="middle" font-weight="800" fill="#3730a3">Planner</text>
-          <text x="120" y="134" text-anchor="middle" font-size="10" fill="#64748b">选题策划 · 任务分配</text>
-          <text x="120" y="150" text-anchor="middle" font-size="10" fill="#64748b">去重 · 打分 · 角度生成</text>
-          <text x="120" y="172" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">v1.2.0</text>
-
-          <rect x="232" y="90" width="160" height="92" rx="14" fill="url(#gR)" stroke="#06b6d4" stroke-width="2"/>
-          <text x="312" y="116" text-anchor="middle" font-weight="800" fill="#155e75">Research</text>
-          <text x="312" y="134" text-anchor="middle" font-size="10" fill="#64748b">热点检索 · 信息收集</text>
-          <text x="312" y="150" text-anchor="middle" font-size="10" fill="#64748b">RAG + Web · 证据溯源</text>
-          <text x="312" y="172" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">v1.1.0</text>
-
-          <rect x="424" y="90" width="160" height="92" rx="14" fill="url(#gW)" stroke="#8b5cf6" stroke-width="2"/>
-          <text x="504" y="116" text-anchor="middle" font-weight="800" fill="#5b21b6">Writer</text>
-          <text x="504" y="134" text-anchor="middle" font-size="10" fill="#64748b">内容生成 · 多模板</text>
-          <text x="504" y="150" text-anchor="middle" font-size="10" fill="#64748b">强制引用 · 多语言</text>
-          <text x="504" y="172" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">v2.0.1</text>
-
-          <rect x="616" y="90" width="160" height="92" rx="14" fill="url(#gRV)" stroke="#10b981" stroke-width="2"/>
-          <text x="696" y="116" text-anchor="middle" font-weight="800" fill="#065f46">Reviewer</text>
-          <text x="696" y="134" text-anchor="middle" font-size="10" fill="#64748b">质量审核 · 事实核查</text>
-          <text x="696" y="150" text-anchor="middle" font-size="10" fill="#64748b">合规 · pass/revise/reject</text>
-          <text x="696" y="172" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">v1.3.0</text>
-
-          <rect x="808" y="90" width="160" height="92" rx="14" fill="url(#gPB)" stroke="#f59e0b" stroke-width="2"/>
-          <text x="888" y="116" text-anchor="middle" font-weight="800" fill="#92400e">Publisher</text>
-          <text x="888" y="134" text-anchor="middle" font-size="10" fill="#64748b">内容发布 · 多渠道</text>
-          <text x="888" y="150" text-anchor="middle" font-size="10" fill="#64748b">灰度 · 撤回 · 元数据</text>
-          <text x="888" y="172" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">v1.0.0</text>
+          <rect x="20" y="50" width="160" height="80" rx="14" fill="url(#gP)" stroke="#d95f1e" stroke-width="2"/>
+          <text x="100" y="84" text-anchor="middle" font-weight="700" fill="#b03f00" font-family="var(--font-display)">Planner</text>
+          <text x="100" y="106" text-anchor="middle" font-size="10" fill="#5d5751">选题策划 · 任务分配</text>
+          <rect x="232" y="50" width="160" height="80" rx="14" fill="url(#gR)" stroke="#198586" stroke-width="2"/>
+          <text x="312" y="84" text-anchor="middle" font-weight="700" fill="#0f5a5b" font-family="var(--font-display)">Research</text>
+          <text x="312" y="106" text-anchor="middle" font-size="10" fill="#5d5751">热点检索 · 信息收集</text>
+          <rect x="444" y="50" width="160" height="80" rx="14" fill="url(#gW)" stroke="#8864c0" stroke-width="2"/>
+          <text x="524" y="84" text-anchor="middle" font-weight="700" fill="#4d2f7a" font-family="var(--font-display)">Writer</text>
+          <text x="524" y="106" text-anchor="middle" font-size="10" fill="#5d5751">内容生成 · 多模板</text>
+          <rect x="656" y="50" width="160" height="80" rx="14" fill="url(#gRV)" stroke="#3aa460" stroke-width="2"/>
+          <text x="736" y="84" text-anchor="middle" font-weight="700" fill="#1f6e3c" font-family="var(--font-display)">Reviewer</text>
+          <text x="736" y="106" text-anchor="middle" font-size="10" fill="#5d5751">质量审核 · 事实核查</text>
+          <rect x="868" y="50" width="112" height="80" rx="14" fill="url(#gPB)" stroke="#e8ab3e" stroke-width="2"/>
+          <text x="924" y="84" text-anchor="middle" font-weight="700" fill="#9a6b14" font-family="var(--font-display)">Publisher</text>
+          <text x="924" y="106" text-anchor="middle" font-size="10" fill="#5d5751">多渠道发布</text>
         </g>
-        <line x1="200" y1="136" x2="228" y2="136" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
-        <line x1="392" y1="136" x2="420" y2="136" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
-        <line x1="584" y1="136" x2="612" y2="136" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
-        <line x1="776" y1="136" x2="804" y2="136" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#a1)"/>
-
-        <!-- revise 回退 -->
-        <path d="M 696 182 Q 600 214 504 182" fill="none" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#a1r)"/>
-        <text x="600" y="208" text-anchor="middle" font-size="10" fill="#f43f5e" font-weight="600">revise 回退（≤ 2 次）</text>
-
-        <!-- support layer -->
-        <text x="30" y="248" fill="#64748b" font-size="11" font-weight="600">支撑系统</text>
-        <g>
-          <rect x="120" y="258" width="220" height="62" rx="12" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
-          <text x="230" y="280" text-anchor="middle" font-weight="700" fill="#065f46" font-size="13">RAG 新闻知识库</text>
-          <text x="230" y="298" text-anchor="middle" font-size="10" fill="#64748b">向量+BM25+实体 · RRF融合 · 时间衰减</text>
-          <text x="230" y="312" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">nDCG@10 ≥ 0.70</text>
-
-          <rect x="390" y="258" width="220" height="62" rx="12" fill="#fdf2f8" stroke="#ec4899" stroke-width="1.5"/>
-          <text x="500" y="280" text-anchor="middle" font-weight="700" fill="#9d174d" font-size="13">Prompt 工程系统</text>
-          <text x="500" y="298" text-anchor="middle" font-size="10" fill="#64748b">不可变版本 · A/B 实验 · 效果回流</text>
-          <text x="500" y="312" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">迭代周期 ≤ 3 天</text>
-
-          <rect x="660" y="258" width="220" height="62" rx="12" fill="#f1f5f9" stroke="#475569" stroke-width="1.5"/>
-          <text x="770" y="280" text-anchor="middle" font-weight="700" fill="#1e293b" font-size="13">Workflow 引擎</text>
-          <text x="770" y="298" text-anchor="middle" font-size="10" fill="#64748b">DAG 编排 · 重试 · 熔断 · 人工介入</text>
-          <text x="770" y="312" text-anchor="middle" font-size="9" fill="#94a3b8" font-family="JetBrains Mono">Temporal + LangGraph</text>
-        </g>
-        <line x1="230" y1="258" x2="230" y2="186" stroke="#10b981" stroke-width="1" stroke-dasharray="3,3"/>
-        <line x1="500" y1="258" x2="504" y2="186" stroke="#ec4899" stroke-width="1" stroke-dasharray="3,3"/>
-        <line x1="770" y1="258" x2="696" y2="186" stroke="#475569" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="180" y1="90" x2="228" y2="90" stroke="#8b857f" stroke-width="1.5" marker-end="url(#ar)"/>
+        <line x1="392" y1="90" x2="440" y2="90" stroke="#8b857f" stroke-width="1.5" marker-end="url(#ar)"/>
+        <line x1="604" y1="90" x2="652" y2="90" stroke="#8b857f" stroke-width="1.5" marker-end="url(#ar)"/>
+        <line x1="816" y1="90" x2="864" y2="90" stroke="#8b857f" stroke-width="1.5" marker-end="url(#ar)"/>
+        <path d="M 736 130 Q 600 160 524 130" fill="none" stroke="#df3c3a" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arr)"/>
+        <text x="630" y="156" text-anchor="middle" font-size="10" fill="#df3c3a" font-weight="600">revise 回退（≤ 2 次）</text>
       </svg>
     </div>
-
     <div class="agent-cards">
-      <div class="agent-card reveal" style="--ag-color:#6366f1;--ag-bg:#eef2ff">
-        <div class="ic">🎯</div>
-        <h4>Planner <span class="ver">v1.2.0</span></h4>
-        <p>聚合多源热点信号，去重打分，生成差异化选题角度并分配下游任务。</p>
-        <div class="io"><b>IN</b> signals[] + strategy<br><b>OUT</b> topics[] (id/title/heat/angles)</div>
-      </div>
-      <div class="agent-card reveal" style="--ag-color:#06b6d4;--ag-bg:#ecfeff">
-        <div class="ic">🔍</div>
-        <h4>Research <span class="ver">v1.1.0</span></h4>
-        <p>调用 RAG + Web 检索，输出可溯源证据集合，标注冲突与可信度。</p>
-        <div class="io"><b>IN</b> topic + retrieval_config<br><b>OUT</b> evidences[] + conflicts</div>
-      </div>
-      <div class="agent-card reveal" style="--ag-color:#8b5cf6;--ag-bg:#faf5ff">
-        <div class="ic">✍️</div>
-        <h4>Writer <span class="ver">v2.0.1</span></h4>
-        <p>基于证据与模板生成结构化稿件，强制引用 ID，支持多语言多模板。</p>
-        <div class="io"><b>IN</b> topic + evidences + template<br><b>OUT</b> article + citations</div>
-      </div>
-      <div class="agent-card reveal" style="--ag-color:#10b981;--ag-bg:#ecfdf5">
-        <div class="ic">🛡️</div>
-        <h4>Reviewer <span class="ver">v1.3.0</span></h4>
-        <p>事实核查、合规扫描、四维质量打分，裁决通过/回退/拒绝。</p>
-        <div class="io"><b>IN</b> article + evidences + policy<br><b>OUT</b> verdict + scores</div>
-      </div>
-      <div class="agent-card reveal" style="--ag-color:#f59e0b;--ag-bg:#fffbeb">
-        <div class="ic">🚀</div>
-        <h4>Publisher <span class="ver">v1.0.0</span></h4>
-        <p>多渠道发布、灰度放量、元数据回写，支持 5 分钟全网撤回。</p>
-        <div class="io"><b>IN</b> article + verdict=pass<br><b>OUT</b> publish_records + metadata</div>
-      </div>
+      <div class="agent-card reveal" style="--ag-color:#d95f1e;--ag-bg:#ffede0"><div class="ic">🎯</div><h4>Planner <span class="ver">v1.2.0</span></h4><p>聚合多源热点信号，去重打分，生成差异化选题角度并分配下游任务。</p><div class="io"><b>IN</b> signals[] + strategy<br><b>OUT</b> topics[] (id/title/heat/angles)</div></div>
+      <div class="agent-card reveal" style="--ag-color:#198586;--ag-bg:#d9f5f5"><div class="ic">🔍</div><h4>Research <span class="ver">v1.1.0</span></h4><p>调用 RAG + Web 检索，输出可溯源证据集合，标注冲突与可信度。</p><div class="io"><b>IN</b> topic + retrieval_config<br><b>OUT</b> evidences[] + conflicts</div></div>
+      <div class="agent-card reveal" style="--ag-color:#8864c0;--ag-bg:#f6ecff"><div class="ic">✍️</div><h4>Writer <span class="ver">v2.0.1</span></h4><p>基于证据与模板生成结构化稿件，强制引用 ID，支持多语言多模板。</p><div class="io"><b>IN</b> topic + evidences + template<br><b>OUT</b> article + citations</div></div>
+      <div class="agent-card reveal" style="--ag-color:#3aa460;--ag-bg:#dffae5"><div class="ic">🛡️</div><h4>Reviewer <span class="ver">v1.3.0</span></h4><p>事实核查、合规扫描、四维质量打分，裁决通过/回退/拒绝。</p><div class="io"><b>IN</b> article + evidences + policy<br><b>OUT</b> verdict + scores</div></div>
+      <div class="agent-card reveal" style="--ag-color:#e8ab3e;--ag-bg:#fff2d0"><div class="ic">🚀</div><h4>Publisher <span class="ver">v1.0.0</span></h4><p>多渠道发布、灰度放量、元数据回写，支持 5 分钟全网撤回。</p><div class="io"><b>IN</b> article + verdict=pass<br><b>OUT</b> publish_records + metadata</div></div>
     </div>
   </div>
 </section>
 
-<!-- ===== Dashboard ===== -->
-<section id="dash">
+<!-- ===== Dashboard (LIVE) ===== -->
+<section id="dash" style="background:var(--surface-2)">
   <div class="container">
     <div class="sec-head reveal">
-      <span class="sec-tag">Data Dashboard</span>
+      <span class="sec-tag">Live Dashboard</span>
       <h2>数据闭环看板</h2>
-      <p class="sec-desc">埋点 → 数仓分层 → 看板 → 决策回流。从 CTR、阅读率到 Prompt 版本效果与 A/B 显著性，全链路可归因。</p>
+      <p class="sec-desc">实时拉取后端生产数据。埋点 → 数仓分层 → 看板 → 决策回流，全链路可归因。数据来源见右上角标识。</p>
+    </div>
+    <div class="stat-grid reveal" id="kpiGrid">
+      <div class="stat"><div class="stat__label">本周生产内容</div><div class="stat__value" id="kpi-prod">—</div><div class="stat__sub" id="kpi-prod-s">loading…</div></div>
+      <div class="stat"><div class="stat__label">生产成功率</div><div class="stat__value" id="kpi-rate">—</div><div class="stat__sub" id="kpi-rate-s"></div></div>
+      <div class="stat"><div class="stat__label">平均单篇成本</div><div class="stat__value" id="kpi-cost">—</div><div class="stat__sub" id="kpi-cost-s"></div></div>
+      <div class="stat"><div class="stat__label">平均产出时延</div><div class="stat__value" id="kpi-dur">—</div><div class="stat__sub" id="kpi-dur-s"></div></div>
     </div>
 
-    <div class="dash-grid reveal">
-      <div class="kpi"><div class="label"><span class="dotc" style="background:#f43f5e"></span>整体 CTR</div><div class="val">4.01%</div><span class="delta up">▲ 0.32pp</span></div>
-      <div class="kpi"><div class="label"><span class="dotc" style="background:#6366f1"></span>阅读率</div><div class="val">65.7%</div><span class="delta up">▲ 1.2pp</span></div>
-      <div class="kpi"><div class="label"><span class="dotc" style="background:#10b981"></span>完读率</div><div class="val">41.9%</div><span class="delta up">▲ 0.8pp</span></div>
-      <div class="kpi"><div class="label"><span class="dotc" style="background:#f59e0b"></span>单条成本</div><div class="val">¥0.31</div><span class="delta down">▼ 22.5%</span></div>
-
-      <div class="panel-card span-8">
-        <h3>CTR 日趋势（按品类）<span class="sub" style="font-weight:500">7 日 · 涨红跌绿</span></h3>
-        <div class="chart-box tall"><canvas id="ctrChart"></canvas></div>
+    <div class="dash-grid reveal" style="margin-top:18px">
+      <div class="card span-8">
+        <div class="card__head"><h3>分品类 CTR</h3><span class="sub">实时 · 涨红跌绿</span></div>
+        <div class="card__body"><div class="chart-box tall"><canvas id="ctrChart"></canvas></div></div>
       </div>
-      <div class="panel-card span-4">
-        <h3>渠道分布</h3>
-        <div class="chart-box tall"><canvas id="channelChart"></canvas></div>
+      <div class="card span-4">
+        <div class="card__head"><h3>生产漏斗</h3><span class="sub">近 7 日</span></div>
+        <div class="card__body"><div class="funnel" id="funnel"></div></div>
       </div>
 
-      <div class="panel-card span-4">
-        <h3>生产漏斗 <span class="sub" style="font-weight:500">今日</span></h3>
-        <div class="funnel">
-          <div class="funnel-row"><div class="funnel-label">选题</div><div class="funnel-bar" style="background:#6366f1;width:100%">182</div><div class="funnel-val">182</div></div>
-          <div class="funnel-row"><div class="funnel-label">生成</div><div class="funnel-bar" style="background:#8b5cf6;width:86%">156</div><div class="funnel-val">156</div></div>
-          <div class="funnel-row"><div class="funnel-label">通过</div><div class="funnel-bar" style="background:#06b6d4;width:69%">126</div><div class="funnel-val">126</div></div>
-          <div class="funnel-row"><div class="funnel-label">发布</div><div class="funnel-bar" style="background:#10b981;width:65%">118</div><div class="funnel-val">118</div></div>
-          <div class="funnel-row"><div class="funnel-label">曝光</div><div class="funnel-bar" style="background:#f59e0b;width:58%">1.2M</div><div class="funnel-val">1.2M</div></div>
-          <div class="funnel-row"><div class="funnel-label">点击</div><div class="funnel-bar" style="background:#f97316;width:24%">48K</div><div class="funnel-val">48.2K</div></div>
-          <div class="funnel-row"><div class="funnel-label">完读</div><div class="funnel-bar" style="background:#f43f5e;width:11%">13.2K</div><div class="funnel-val">13.2K</div></div>
-        </div>
+      <div class="card span-6">
+        <div class="card__head"><h3>成本趋势</h3><span class="sub">单篇成本 · 按天</span></div>
+        <div class="card__body"><div class="chart-box"><canvas id="costChart"></canvas></div></div>
       </div>
-      <div class="panel-card span-4">
-        <h3>Prompt 版本五维雷达</h3>
-        <div class="sub">Writer deep_dive · v1.3.0 vs v2.0.1</div>
-        <div class="chart-box"><canvas id="radarChart"></canvas></div>
-      </div>
-      <div class="panel-card span-4">
-        <h3>Agent 成功率</h3>
-        <div class="sub">近 7 日 · 成功 / 降级 / 失败</div>
-        <div class="chart-box"><canvas id="agentChart"></canvas></div>
+      <div class="card span-6">
+        <div class="card__head"><h3>Prompt 版本效果</h3><span class="sub">CTR by version</span></div>
+        <div class="card__body"><div class="chart-box"><canvas id="promptChart"></canvas></div></div>
       </div>
 
-      <div class="panel-card span-6">
-        <h3>A/B 实验：v1.3.0 vs v2.0.1</h3>
-        <div class="sub">CTR 日对比 · ★ p&lt;0.05 显著</div>
-        <div class="chart-box"><canvas id="abChart"></canvas></div>
-      </div>
-      <div class="panel-card span-6">
-        <h3>Bad Case 分类帕累托</h3>
-        <div class="sub">柱=数量 · 线=累计占比</div>
-        <div class="chart-box"><canvas id="paretoChart"></canvas></div>
+      <div class="card span-12">
+        <div class="card__head"><h3>A/B 实验</h3><span class="sub">Prompt 版本对照 · 显著性检验</span></div>
+        <div class="card__body"><div class="table-wrap"><table class="tbl"><thead><tr><th>实验</th><th>对象</th><th>对照组</th><th>实验组</th><th>核心指标</th><th>提升</th><th>p-value</th><th>结论</th></tr></thead><tbody id="expBody"><tr><td colspan="8" class="empty-state">加载中…</td></tr></tbody></table></div></div>
       </div>
 
-      <div class="panel-card span-12">
-        <h3>实验列表</h3>
-        <table>
-          <thead><tr><th>实验</th><th>对象</th><th>对照组</th><th>实验组</th><th>核心指标</th><th>提升</th><th>p-value</th><th>结论</th></tr></thead>
-          <tbody>
-            <tr><td>exp_001</td><td>Writer Prompt</td><td class="mono">v1.3.0</td><td class="mono">v2.0.1</td><td>CTR</td><td style="color:#f43f5e;font-weight:700">+15.8%</td><td class="mono">0.012</td><td><span class="pill-tag pt-pass">treatment 胜出</span></td></tr>
-            <tr><td>exp_002</td><td>RAG 切分</td><td>段落</td><td>滑窗256</td><td>引用率</td><td style="color:#f43f5e;font-weight:700">+8.3%</td><td class="mono">0.034</td><td><span class="pill-tag pt-pass">treatment 胜出</span></td></tr>
-            <tr><td>exp_003</td><td>Reviewer 严格度</td><td>lenient</td><td>strict</td><td>Bad Case</td><td style="color:#f43f5e;font-weight:700">-34.1%</td><td class="mono">0.008</td><td><span class="pill-tag pt-pass">treatment 胜出</span></td></tr>
-            <tr><td>exp_004</td><td>Writer 模型</td><td class="mono">gpt-4o-mini</td><td class="mono">claude-haiku</td><td>质量分</td><td>+1.2%</td><td class="mono">0.42</td><td><span class="pill-tag pt-warn">无显著差异</span></td></tr>
-            <tr><td>exp_005</td><td>标题风格</td><td>信息型</td><td>悬念型</td><td>CTR</td><td style="color:#10b981;font-weight:700">-6.7%</td><td class="mono">0.021</td><td><span class="pill-tag pt-fail">control 胜出</span></td></tr>
-          </tbody>
-        </table>
+      <div class="card span-12">
+        <div class="card__head"><h3>RAG 知识库</h3><span class="sub" id="ragSub">实时统计</span></div>
+        <div class="card__body"><div class="stat-grid" id="ragStats"><div class="stat"><div class="stat__label">文档总数</div><div class="stat__value" id="rag-docs">—</div></div><div class="stat"><div class="stat__label">Chunk 总数</div><div class="stat__value" id="rag-chunks">—</div></div><div class="stat"><div class="stat__label">来源站点</div><div class="stat__value" id="rag-src">—</div></div><div class="stat"><div class="stat__label">检索平均时延</div><div class="stat__value">38<small>ms</small></div></div></div></div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ===== Tech highlights ===== -->
-<section id="tech" class="light">
+<section id="tech">
   <div class="container">
     <div class="sec-head reveal">
-      <span class="sec-tag" style="background:rgba(139,92,246,.15);color:#c4b5fd">Engineering Highlights</span>
+      <span class="sec-tag">Engineering Highlights</span>
       <h2>六大技术亮点</h2>
       <p class="sec-desc">不只是"能跑"，而是为生产环境设计的工程化系统。</p>
     </div>
@@ -431,7 +364,7 @@
 </section>
 
 <!-- ===== Docs ===== -->
-<section id="docs">
+<section id="docs" style="background:var(--surface-2)">
   <div class="container">
     <div class="sec-head reveal">
       <span class="sec-tag">Documentation</span>
@@ -452,10 +385,10 @@
 </section>
 
 <!-- ===== Demo ===== -->
-<section id="demo" class="light">
+<section id="demo">
   <div class="container">
     <div class="sec-head reveal">
-      <span class="sec-tag" style="background:rgba(99,102,241,.15);color:#a5b4fc">Runnable Demo</span>
+      <span class="sec-tag">Runnable Demo</span>
       <h2>可运行 Python Demo</h2>
       <p class="sec-desc">19 个文件 · 1806 行代码 · 8 项单元测试全通过 · 零配置可跑（模拟 LLM 模式）。</p>
     </div>
@@ -500,55 +433,139 @@
     <a href="#arch">架构</a>
     <a href="#dash">看板</a>
     <a href="#docs">文档</a>
+    <a href="console/">运营控制台</a>
   </div>
   <div>TrendForge · AI Native 全球内容供给平台 · 配套 PRD v1.0</div>
-  <div style="margin-top:6px;opacity:.6">Multi-Agent · RAG · Prompt Engineering · Workflow · Data Loop</div>
+  <div style="margin-top:6px;opacity:.7">Multi-Agent · RAG · Prompt Engineering · Workflow · Data Loop</div>
 </footer>
 
+<script src="console/assets/mock.js"></script>
+<script src="console/assets/api.js"></script>
 <script>
-const C={indigo:'#6366f1',purple:'#8b5cf6',pink:'#ec4899',cyan:'#06b6d4',emerald:'#10b981',amber:'#f59e0b',rose:'#f43f5e',slate:'#94a3b8',orange:'#f97316'};
-const days=['07-15','07-16','07-17','07-18','07-19','07-20','07-21'];
-Chart.defaults.font.family="'Inter','Noto Sans SC',sans-serif";
-Chart.defaults.font.size=11;
-Chart.defaults.color='#64748b';
+const VM = window.VM;
+const $ = (s) => document.querySelector(s);
+const COL = { ember:'#d95f1e', teal:'#198586', violet:'#8864c0', green:'#3aa460', amber:'#e8ab3e', red:'#df3c3a', slate:'#8b857f', orange:'#ee7842' };
+const fmtNum = (n) => (n == null ? "0" : Number(n).toLocaleString("en-US"));
 
-new Chart(document.getElementById('ctrChart'),{type:'line',data:{labels:days,datasets:[
-  {label:'科技',data:[3.8,4.0,4.2,3.9,4.1,4.3,4.5],borderColor:C.rose,backgroundColor:'rgba(244,63,94,.1)',tension:.4,fill:true,borderWidth:2.5},
-  {label:'财经',data:[3.5,3.6,3.4,3.7,3.8,3.9,3.8],borderColor:C.amber,tension:.4,borderWidth:2.5},
-  {label:'国际',data:[2.8,2.9,3.0,3.1,3.0,3.2,3.1],borderColor:C.purple,tension:.4,borderWidth:2.5}
-]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:16}}},scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'#f1f5f9'}}}}});
+/* data source pill */
+function setSource(){
+  const pill = $('#srcPill'), txt = $('#srcText');
+  const live = VM && VM.lastSource === 'live';
+  pill.classList.toggle('is-live', !!live);
+  txt.textContent = live ? 'LIVE · 实时' : 'DEMO · 离线';
+}
+$('#srcPill').addEventListener('click', () => {
+  if (VM.mode === 'mock') VM.setMode('auto'); else VM.setMode('mock');
+  render();
+});
 
-new Chart(document.getElementById('channelChart'),{type:'doughnut',data:{labels:['站内Feed','微博','Twitter','RSS','微信'],datasets:[{data:[42,25,15,10,8],backgroundColor:[C.indigo,C.rose,C.cyan,C.amber,C.emerald],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12,font:{size:11}}}}}});
+Chart.defaults.font.family = "'IBM Plex Sans','Noto Sans SC',sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = '#8b857f';
 
-new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels:['CTR','阅读率','质量分','事实一致','低BadCase'],datasets:[
-  {label:'v1.3.0',data:[3.8,0.64,3.9,0.97,0.92],borderColor:C.slate,backgroundColor:'rgba(148,163,184,.15)',borderWidth:2},
-  {label:'v2.0.1',data:[4.4,0.66,4.1,0.98,0.97],borderColor:C.rose,backgroundColor:'rgba(244,63,94,.2)',borderWidth:2.5}
-]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{suggestedMin:0.3,suggestedMax:1,grid:{color:'#e2e8f0'},angleLines:{color:'#e2e8f0'},pointLabels:{font:{size:11}}}},plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12}}}}});
+async function render(){
+  if (!VM) { $('#srcText').textContent = '数据层缺失'; return; }
+  try {
+    const [ov, rag, an, pr] = await Promise.all([VM.overview(), VM.rag(), VM.analytics(), VM.prompts()]);
 
-new Chart(document.getElementById('agentChart'),{type:'bar',data:{labels:['Planner','Research','Writer','Reviewer','Publisher'],datasets:[
-  {label:'成功',data:[98.4,92.2,95.5,100,98.4],backgroundColor:C.emerald,stack:'s'},
-  {label:'降级',data:[1.6,6.7,3.4,0,1.6],backgroundColor:C.amber,stack:'s'},
-  {label:'失败',data:[0,1.1,1.1,0,0],backgroundColor:C.rose,stack:'s'}
-]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12}}},scales:{x:{stacked:true,max:100,grid:{color:'#f1f5f9'}},y:{stacked:true,grid:{display:false}}}}});
+    // hero
+    const ragDocs = (rag.stats && rag.stats[0] && rag.stats[0].value) || '—';
+    const ragChunks = (rag.stats && rag.stats[1] && rag.stats[1].value) || '—';
+    $('#hero-kb').textContent = ragDocs; $('#hero-kb-s').textContent = 'news_documents';
+    $('#hero-chunks').textContent = ragChunks; $('#hero-chunks-s').textContent = '已向量化';
+    if (ov.kpis && ov.kpis.length){
+      $('#hero-prod').textContent = ov.kpis[0].value; $('#hero-prod-s').textContent = 'total_articles';
+      $('#hero-cost').textContent = ov.kpis[2].value; $('#hero-cost-s').textContent = 'avg / task';
+    }
 
-new Chart(document.getElementById('abChart'),{type:'bar',data:{labels:days,datasets:[
-  {label:'v1.3.0 (control)',data:[3.7,3.8,3.9,3.8,3.9,3.8,3.9],backgroundColor:'rgba(148,163,184,.6)',borderRadius:6},
-  {label:'v2.0.1 (treatment)',data:[4.1,4.3,4.4,4.2,4.5,4.4,4.6],backgroundColor:'rgba(244,63,94,.7)',borderRadius:6}
-]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12}}},scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'#f1f5f9'}}}}});
+    // KPI grid (overview)
+    if (ov.kpis){
+      $('#kpi-prod').innerHTML = ov.kpis[0].value + (ov.kpis[0].unit ? '<small> '+ov.kpis[0].unit+'</small>' : '');
+      $('#kpi-prod-s').textContent = '本周';
+      $('#kpi-rate').textContent = ov.kpis[1].value + (ov.kpis[1].unit ? '<small>'+ov.kpis[1].unit+'</small>' : '');
+      $('#kpi-rate-s').textContent = 'succeeded / total';
+      $('#kpi-cost').textContent = ov.kpis[2].value + (ov.kpis[2].unit ? '<small>'+ov.kpis[2].unit+'</small>' : '');
+      $('#kpi-cost-s').textContent = 'avg / task';
+      $('#kpi-dur').textContent = ov.kpis[3].value + (ov.kpis[3].unit ? '<small> '+ov.kpis[3].unit+'</small>' : '');
+      $('#kpi-dur-s').textContent = 'avg latency';
+    }
 
-const bc=[{l:'F 事实',v:18},{l:'H 幻觉',v:14},{l:'Q 质量',v:12},{l:'C 引用',v:9},{l:'D 数据',v:7},{l:'U 体验',v:5},{l:'G 合规',v:3}];
-const tot=bc.reduce((s,d)=>s+d.v,0);let cum=0;
-new Chart(document.getElementById('paretoChart'),{data:{labels:bc.map(d=>d.l),datasets:[
-  {type:'bar',label:'数量',data:bc.map(d=>d.v),backgroundColor:C.indigo,borderRadius:6,yAxisID:'y'},
-  {type:'line',label:'累计%',data:bc.map(d=>{cum+=d.v;return Math.round(cum/tot*100)}),borderColor:C.rose,yAxisID:'y1',tension:.4,borderWidth:2.5,pointRadius:4}
-]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,padding:12}}},scales:{y:{position:'left',grid:{color:'#f1f5f9'}},y1:{position:'right',min:0,max:100,grid:{display:false}}}}});
+    // funnel
+    const f = ov.funnel || [];
+    $('#funnel').innerHTML = f.map((d,i)=>{
+      const c = [COL.ember,COL.violet,COL.teal,COL.green,COL.amber,COL.orange][i%6];
+      const w = Math.max(8, Math.min(100, Number(d.value)||0));
+      return `<div class="funnel-row"><div class="funnel-label">${d.stage}</div><div class="funnel-bar" style="width:${w}%;background:${c}">${w>=20?d.count:''}</div><div class="funnel-val">${d.count}</div></div>`;
+    }).join('') || '<div class="empty-state">暂无漏斗数据</div>';
 
-// nav scroll
-const nav=document.getElementById('nav');
-window.addEventListener('scroll',()=>{if(window.scrollY>20)nav.style.boxShadow='0 4px 20px rgba(15,23,42,.08)';else nav.style.boxShadow='none'});
-// reveal
-const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});
-document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%4*60)+'ms';io.observe(el)});
+    // RAG stats
+    if (rag.stats){
+      $('#rag-docs').textContent = rag.stats[0].value;
+      $('#rag-chunks').textContent = rag.stats[1].value;
+      $('#rag-src').textContent = rag.stats[2].value;
+    }
+
+    // charts
+    renderCtr(an.ctrByCat || []);
+    renderCost(an.costTrend || []);
+    renderPrompt(an.promptEffect || []);
+
+    // experiments
+    renderExps((pr.experiments || []));
+
+    setSource();
+  } catch(e){
+    console.error('[portal] render failed', e);
+    $('#srcText').textContent = '加载失败';
+  }
+}
+
+function renderCtr(rows){
+  const labels = rows.map(r => r.cat);
+  const data = rows.map(r => r.ctr);
+  drawChart('ctrChart','bar',{labels,datasets:[{label:'CTR %',data,backgroundColor:COL.ember,borderRadius:6}]},
+    {y:{ticks:{callback:v=>v+'%'},grid:{color:'#ece8e2'}}});
+}
+function renderCost(trend){
+  const data = Array.isArray(trend) ? trend : (trend.cost || trend.costTrend || []);
+  const labels = (trend && trend.labels && trend.labels.length) ? trend.labels : data.map((_,i)=>'D'+(i+1));
+  drawChart('costChart','line',{labels,datasets:[{label:'单篇成本 ¥',data,borderColor:COL.teal,backgroundColor:'rgba(25,133,134,.12)',tension:.4,fill:true,borderWidth:2.5}]},
+    {y:{ticks:{callback:v=>'¥'+v},grid:{color:'#ece8e2'}}});
+}
+function renderPrompt(rows){
+  const labels = rows.map(r => r.name);
+  const data = rows.map(r => r.ctr);
+  drawChart('promptChart','bar',{labels,datasets:[{label:'CTR %',data,backgroundColor:COL.violet,borderRadius:6}]},
+    {y:{ticks:{callback:v=>v+'%'},grid:{color:'#ece8e2'}}});
+}
+const _charts = {};
+function drawChart(id,type,data,scales){
+  if (_charts[id]) _charts[id].destroy();
+  _charts[id] = new Chart(document.getElementById(id),{type,data,options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales: Object.assign({x:{grid:{display:false}}}, scales||{})
+  }});
+}
+function renderExps(exps){
+  const body = $('#expBody');
+  if (!exps.length){ body.innerHTML = '<tr><td colspan="8" class="empty-state">暂无实验数据</td></tr>'; return; }
+  body.innerHTML = exps.map(e=>{
+    const r = e.report || {};
+    const lift = (r.lift!=null) ? (r.lift>0?'+':'')+Number(r.lift).toFixed(1)+'%' : '—';
+    const liftCls = r.lift>0 ? 'color:#df3c3a;font-weight:700' : 'color:#3aa460;font-weight:700';
+    const p = (r.p!=null) ? Number(r.p).toFixed(3) : '—';
+    const sig = r.significant ? '<span class="badge badge--ok">显著</span>' : '<span class="badge badge--warn">不显著</span>';
+    const concl = r.conclusion ? r.conclusion : (e.status==='running'?'进行中':'—');
+    return `<tr><td class="mono">${e.id}</td><td>${e.agent||''} / ${e.scene||''}</td><td class="mono">${e.control||''}</td><td class="mono">${e.treatment||''}</td><td>CTR</td><td style="${liftCls}">${lift}</td><td class="mono">${p}</td><td>${sig} ${concl}</td></tr>`;
+  }).join('');
+}
+
+/* reveal */
+const io = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.1});
+document.querySelectorAll('.reveal').forEach((el,i)=>{el.style.transitionDelay=(i%4*60)+'ms';io.observe(el);});
+
+render();
 </script>
 </body>
 </html>
