@@ -45,6 +45,6 @@ services:
   - type: web
     name: trendforge-web
     runtime: static
-    buildCommand: mkdir -p dist/console && cp build/index.html dist/ && cp -r ui/trendforge-console/. dist/console/
+    buildCommand: rm -rf dist && mkdir -p dist/console && cp build/index.html dist/ && cp -r ui/trendforge-console/. dist/console/
     staticPublishPath: dist
     autoDeploy: true
