@@ -35,3 +35,16 @@ services:
     #     name: trendforge-data
     #     mountPath: /app/data
     #     sizeGB: 1
+
+  # 前端静态站点（免费，不休眠）：门户 build/ + 运营控制台 ui/trendforge-console/
+  # 构建时拼装 dist/，不包含 enterprise-spec（企业级设计参考，不在 MVP 部署范围）
+  # 访问路径：
+  #   /            门户首页（build/index.html）
+  #   /api.html    API 控制台
+  #   /console/    运营控制台（自动连 https://trendforge-api.onrender.com，失败回退 DEMO 数据）
+  - type: web
+    name: trendforge-web
+    runtime: static
+    buildCommand: mkdir -p dist/console && cp build/index.html build/api.html dist/ && cp -r ui/trendforge-console/. dist/console/
+    staticPublishPath: dist
+    autoDeploy: true

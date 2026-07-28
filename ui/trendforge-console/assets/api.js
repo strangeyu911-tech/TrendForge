@@ -31,9 +31,12 @@
 window.VM = (function () {
   const M = window.MOCK;
   const params = new URLSearchParams(location.search);
-  // Default points at the local backend. If it's down, loaders fall back to DEMO (mock).
+  // Default backend: local dev → localhost:8000; deployed (non-localhost) → Render 线上 API。
+  // If it's down, loaders fall back to DEMO (mock).
   // Override with ?api=http://host:port or set window.__TF_API__ before this script.
-  let API_BASE = params.get("api") || window.__TF_API__ || "http://localhost:8000";
+  const isLocal = ["localhost", "127.0.0.1", ""].includes(location.hostname) || location.protocol === "file:";
+  const DEFAULT_API = isLocal ? "http://localhost:8000" : "https://trendforge-api.onrender.com";
+  let API_BASE = params.get("api") || window.__TF_API__ || DEFAULT_API;
   let forced = params.get("mode"); // 'live' | 'mock' | null(auto)
   let lastSource = "mock"; // 最近一次 load 实际数据源
 
