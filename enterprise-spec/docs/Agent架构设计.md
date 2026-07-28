@@ -382,6 +382,8 @@ class BaseAgent(ABC):
    - overall < min_quality_score → revise；
    - 否则 pass。
 
+> 严格度说明：事实不一致即回退为默认策略；可在 ReviewPolicy 设 `fact_strict=false` 时降级为「仅 critical 不一致（如数字/实体错误）回退，minor 不一致标注放行」，与 Workflow §9.1 的 `reviewer_strict` 开关联动。
+
 ### 7.5 异常回退
 
 | 异常 | 处理 |

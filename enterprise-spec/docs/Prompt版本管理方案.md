@@ -128,6 +128,7 @@ Prompt 升版前必检：
 - `writer_deep_dive.zh.v2.0.1`
 - `writer_deep_dive.en.v2.0.1`
 - `writer_deep_dive.ja.v2.0.1`
+- `writer_deep_dive.ko.v2.0.1`
 
 变体间保持变量与 Schema 一致，仅自然语言措辞不同。
 
@@ -245,14 +246,15 @@ Few-shot 示例单独管理（`few_shot_library/`），Prompt 模板引用：
 
 ```sql
 SELECT
-  prompt_version,
+  f.prompt_writer_v AS prompt_version,
   COUNT(*) AS articles,
-  AVG(ctr) AS avg_ctr,
-  AVG(read_rate) AS avg_read_rate,
-  SUM(CASE WHEN bad_case THEN 1 ELSE 0 END) / COUNT(*) AS bad_case_rate
-FROM content_metrics
-WHERE published_at >= NOW() - INTERVAL '7 days'
-GROUP BY prompt_version;
+  AVG(d.ctr) AS avg_ctr,
+  AVG(d.read_rate) AS avg_read_rate,
+  SUM(CASE WHEN f.is_bad_case THEN 1 ELSE 0 END) / COUNT(*) AS bad_case_rate
+FROM dwd_content_fact f
+JOIN dws_content_daily d USING(content_id)
+WHERE f.published_at >= NOW() - INTERVAL '7 days'
+GROUP BY f.prompt_writer_v;
 ```
 
 ### 7.2 Prompt 效果看板

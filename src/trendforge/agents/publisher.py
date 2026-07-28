@@ -67,7 +67,7 @@ class PublisherAgent(BaseAgent):
         for ch in dist_plan["channels"]:
             records.append({
                 "channel": ch, "content_id": content_id,
-                "url": f"https://fluxpress.app/{ch}/{content_id}",
+                "url": f"https://trendforge.app/{ch}/{content_id}",
                 "status": "gray_10pct" if settings.gray_initial_ratio < 1 else "published",
                 "published_at": datetime.utcnow().isoformat(),
             })

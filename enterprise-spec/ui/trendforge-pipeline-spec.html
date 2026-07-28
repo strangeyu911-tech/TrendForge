@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrendForge · 生产流水线 · 开发级标注切图</title>
+<style>
+:root,[data-theme="dark"]{
+  --bg:#161310;--surface-1:#1E1A16;--surface-2:#26211B;--surface-3:#312A22;
+  --border:#332D24;--border-strong:#463C30;--text:#F3EEE6;--text-2:#B6AC9C;--text-3:#847A6B;
+  --brand:#FF7A45;--brand-strong:#FF9166;--brand-soft:rgba(255,122,69,.14);--brand-ink:#1A0F08;
+  --success:#4ADE80;--warn:#FBBF24;--error:#F87171;--info:#60A5FA;
+  --a-planner:#FF7A45;--a-research:#2DD4BF;--a-writer:#F5B544;--a-reviewer:#4ADE80;--a-publisher:#60A5FA;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  --ease:cubic-bezier(.165,.84,.44,1);
+  --ann:#7CD6FF;--ann-2:#FFD166;--ann-soft:rgba(124,214,255,.12);
+  --font-d:"Space Grotesk",sans-serif;--font-b:"IBM Plex Sans","IBM Plex Sans SC",sans-serif;--font-m:"IBM Plex Mono",monospace;
+}
+[data-theme="light"]{
+  --bg:#FAF8F5;--surface-1:#FFFFFF;--surface-2:#F6F2EC;--surface-3:#EDE7DD;
+  --border:#E9E2D7;--border-strong:#D8CDBC;--text:#1C1814;--text-2:#5C5347;--text-3:#8B8071;
+  --brand:#EA5B22;--brand-strong:#F2742E;--brand-soft:rgba(234,91,34,.10);--brand-ink:#FFF;
+  --ann:#0284C7;--ann-2:#B45309;--ann-soft:rgba(2,132,199,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* ===== top bar ===== */
+.spec-top{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.spec-top h1{font-family:var(--font-d);font-size:17px;font-weight:600;letter-spacing:.01em}
+.spec-top .crumb{font-size:12px;color:var(--text-3);font-family:var(--font-m)}
+.spec-top .spacer{flex:1}
+.legend{display:flex;gap:14px;font-size:11.5px;color:var(--text-2);align-items:center;flex-wrap:wrap}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend .l-dim i{background:var(--ann)}.legend .l-tok i{background:var(--ann-2)}
+.tabs{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px}
+.tabs button{font-family:inherit;font-size:12px;font-weight:600;padding:5px 12px;border-radius:7px;border:none;background:transparent;color:var(--text-2);cursor:pointer}
+.tabs button.active{background:var(--surface-1);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer;transition:all .2s var(--ease)}
+.toggle:hover{border-color:var(--border-strong)}
+.toggle .sw{width:34px;height:18px;border-radius:20px;background:var(--surface-3);position:relative;transition:background .2s var(--ease);flex:none}
+.toggle .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--text-2);transition:all .2s var(--ease)}
+body.show-ann .toggle .sw{background:var(--ann)}
+body.show-ann .toggle .sw::after{left:18px;background:#0A1A22}
+
+/* ===== main grid (artboard + sticky index) ===== */
+main{max-width:1320px;margin:0 auto;padding:28px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start}
+.sec-h{font-family:var(--font-d);font-size:14px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:34px 0 14px;display:flex;align-items:center;gap:10px}
+.sec-h::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--brand)}
+
+/* ===== artboard ===== */
+.artboard-wrap{grid-column:1;min-width:0}
+.artboard{background:linear-gradient(180deg,color-mix(in srgb,var(--surface-1) 50%,var(--bg)),var(--bg));border:1px solid var(--border);border-radius:18px;padding:22px;position:relative}
+.card{background:var(--surface-1);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow);position:relative;transition:outline .2s}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px}
+.card-head h3{font-size:15px;font-weight:600;font-family:var(--font-d);letter-spacing:.01em}
+.card-head .desc{font-size:12px;color:var(--text-3);margin-top:3px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:20px}
+.pill.brand{background:var(--brand-soft);color:var(--brand-strong)}
+.pill.info{background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.pill.pass{background:color-mix(in srgb,var(--success) 16%,transparent);color:var(--success)}
+.pill .dotstat{width:6px;height:6px;border-radius:50%;background:currentColor}
+.mb{margin-bottom:18px}
+
+/* pipe */
+.pipe{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;position:relative}
+.pnode{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;padding:15px;position:relative;transition:all .25s var(--ease);cursor:pointer}
+.pnode:hover{transform:translateY(-3px);border-color:var(--border-strong);box-shadow:var(--shadow)}
+.pnode .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pnode .pname{font-family:var(--font-d);font-weight:600;font-size:14px}
+.pnode .pver{font-family:var(--font-m);font-size:10.5px;color:var(--text-3)}
+.pstate{font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px}
+.pstate.run{background:color-mix(in srgb,var(--brand) 16%,transparent);color:var(--brand-strong)}
+.pstate.idle{background:var(--surface-3);color:var(--text-3)}
+.pstate.done{background:color-mix(in srgb,var(--success) 16%,transparent);color:var(--success)}
+.pstate .d{width:7px;height:7px;border-radius:50%;display:inline-block;background:currentColor}
+.pnode .pmeta{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-3);margin-top:10px;font-family:var(--font-m)}
+.pnode .pbar{height:5px;border-radius:5px;background:var(--surface-3);margin-top:8px;overflow:hidden}
+.pnode .pbar>span{display:block;height:100%;border-radius:5px}
+.pnode-tools{display:flex;gap:6px;margin-top:11px}
+.pnode-tools button{flex:1;font-family:inherit;font-size:11.5px;font-weight:600;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);cursor:pointer}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+
+/* filters + tasks */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.chip-btn{font-family:inherit;font-size:12px;font-weight:500;padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-2);cursor:pointer}
+.chip-btn.active{background:var(--brand-soft);color:var(--brand-strong);border-color:var(--brand)}
+.task-card{display:flex;align-items:center;gap:14px;padding:13px 15px;border:1px solid var(--border);border-radius:12px;background:var(--surface-1);margin-bottom:11px}
+.task-card .ticon{width:40px;height:40px;border-radius:10px;background:var(--brand-soft);color:var(--brand-strong);display:grid;place-items:center;font-size:18px;flex:none}
+.task-card .tmain{flex:1;min-width:0}
+.task-card .tt{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.task-card .ts{font-size:11.5px;color:var(--text-3);display:flex;gap:10px;margin-top:3px;font-family:var(--font-m)}
+
+/* feed */
+.feed{display:flex;flex-direction:column;gap:2px;max-height:420px;overflow-y:auto;padding-right:4px}
+.fitem{display:flex;gap:11px;padding:9px 4px;border-bottom:1px solid var(--border);font-size:12.5px}
+.fitem .ftime{font-family:var(--font-m);font-size:11px;color:var(--text-3);flex:none;width:46px}
+.fitem .fdot{width:7px;height:7px;border-radius:50%;margin-top:5px;flex:none}
+.fitem .ftxt{color:var(--text-2)}.fitem .ftxt b{color:var(--text);font-weight:600}
+.pp{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:5px 11px;cursor:pointer}
+.pp .ico{width:8px;height:8px;border-radius:50%;background:var(--success)}
+
+/* ===== numbered annotation badges (the ONLY thing on the artboard) ===== */
+.bm{position:absolute;z-index:6;width:22px;height:22px;border-radius:50%;background:var(--ann);color:#062033;font-family:var(--font-m);font-size:11px;font-weight:700;display:grid;place-items:center;cursor:pointer;box-shadow:0 0 0 2px var(--bg),0 2px 6px rgba(0,0,0,.5);transition:transform .15s var(--ease),background .2s}
+.bm:hover{transform:scale(1.18)}
+.bm.tok{background:var(--ann-2);color:#3A2400}
+.bm[data-active="1"]{background:var(--brand);color:#fff;transform:scale(1.25)}
+.bm.tl{top:-11px;left:-11px}.bm.tr{top:-11px;right:-11px}
+.bm.bl{bottom:-11px;left:-11px}.bm.br{bottom:-11px;right:-11px}
+.bm.out{top:14px;left:14px}
+body:not(.show-ann) .bm{opacity:0;pointer-events:none}
+
+/* outline highlight when a row is active */
+.hl-card{outline:2px solid var(--brand);outline-offset:2px;border-radius:18px}
+
+/* ===== sticky right-side spec index ===== */
+.index{grid-column:2;position:sticky;top:80px;max-height:calc(100vh - 100px);overflow-y:auto;background:var(--surface-1);border:1px solid var(--border);border-radius:14px;display:flex;flex-direction:column}
+.index-head{padding:14px 16px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface-1);z-index:2}
+.index-head h3{font-family:var(--font-d);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.index-head h3::before{content:"";width:4px;height:14px;background:var(--brand);border-radius:2px}
+.index-head .hint{font-size:11px;color:var(--text-3);margin-top:4px;font-family:var(--font-m)}
+.idx-list{padding:6px}
+.idx-row{display:grid;grid-template-columns:22px 1fr;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;transition:background .15s;align-items:start}
+.idx-row:hover{background:var(--surface-2)}
+.idx-row.active{background:var(--brand-soft);outline:1px solid var(--brand)}
+.idx-n{width:22px;height:22px;border-radius:50%;background:var(--ann);color:#062033;font-family:var(--font-m);font-size:11px;font-weight:700;display:grid;place-items:center;flex:none}
+.idx-row.tok .idx-n{background:var(--ann-2);color:#3A2400}
+.idx-body .ttl{font-size:12.5px;font-weight:600;color:var(--text);line-height:1.35}
+.idx-body .ds{font-size:11px;color:var(--text-3);font-family:var(--font-m);line-height:1.45;margin-top:3px}
+.idx-body .val{color:var(--ann-2);font-weight:600}
+
+/* ===== spec tables (full-width below the grid) ===== */
+.full{grid-column:1 / -1}
+.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.sheet{background:var(--surface-1);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.sheet h4{font-family:var(--font-d);font-size:13px;font-weight:600;padding:13px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.sheet h4 .badge{font-family:var(--font-m);font-size:10px;color:var(--brand-strong);background:var(--brand-soft);padding:2px 7px;border-radius:6px;font-weight:600}
+table{border-collapse:collapse;width:100%;font-size:12px}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-family:var(--font-m);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);background:var(--surface-2);font-weight:600}
+td .mono{font-family:var(--font-m);color:var(--text-2)}
+td .kv{display:flex;flex-direction:column;gap:2px}
+td .prop{color:var(--text-3);font-size:10.5px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:6px;border:1px solid var(--border-strong)}
+.note{color:var(--text-3);font-size:11px}
+
+/* slices */
+.slice{display:flex;align-items:center;gap:14px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.slice:last-child{border-bottom:none}
+.slice .ico-box{width:52px;height:52px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;font-size:22px;flex:none;color:var(--brand-strong)}
+.slice .meta{flex:1}
+.slice .meta .nm{font-family:var(--font-m);font-size:12.5px;font-weight:600}
+.slice .meta .ds{font-size:11.5px;color:var(--text-3);margin-top:2px}
+.slice .fmt{font-family:var(--font-m);font-size:11px;color:var(--text-2);text-align:right;flex:none;line-height:1.7}
+.slice .fmt b{color:var(--ann)}
+
+.foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--border);font-size:11.5px;color:var(--text-3);display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+
+/* responsive */
+@media (max-width:1080px){
+  main{grid-template-columns:1fr}
+  .index{position:static;max-height:none}
+  .spec-grid{grid-template-columns:1fr}
+  .pipe{grid-template-columns:repeat(3,1fr)}
+  .grid-2{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .pipe{grid-template-columns:1fr 1fr}
+  main{padding:18px}
+}
+</style>
+</head>
+<body class="show-ann">
+<div class="spec-top">
+  <div>
+    <h1>生产流水线 · 开发级标注切图</h1>
+    <div class="crumb">TrendForge / 生产运营 / pipeline · 深色主题(default) · 蓝=尺寸/间距 · 金=Token/颜色值</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="legend">
+    <span class="l-dim"><i></i>尺寸 / 间距</span>
+    <span class="l-tok"><i></i>Token / 色值</span>
+  </div>
+  <div class="tabs" id="themeTabs">
+    <button data-t="dark" class="active">深色</button>
+    <button data-t="light">浅色</button>
+  </div>
+  <button class="toggle" id="tg"><span class="sw"></span>标注显示</button>
+</div>
+
+<main>
+  <!-- ===== 1:1 artboard ===== -->
+  <div class="artboard-wrap">
+    <div class="sec-h">标注画板 · Annotated Artboard (1:1)</div>
+    <div class="artboard">
+      <!-- PIPELINE CARD -->
+      <div class="card mb" id="el-card">
+        <span class="bm tl dim" data-idx="1" title="容器卡片">1</span>
+        <span class="bm tr tok" data-idx="2" title="容器背景 Token">2</span>
+        <div class="card-head">
+          <div><h3>Multi-Agent 生产流水线</h3><div class="desc">热点信号 → 选题 → 检索 → 生成 → 审核 → 发布，端到端 ≤ 8 分钟 · 点击节点查看详情</div></div>
+          <span class="pill brand"><span class="dotstat"></span>实时</span>
+        </div>
+        <div class="pipe" id="el-pipe">
+          <span class="bm bl dim" data-idx="3" style="position:relative;top:auto;left:auto;bottom:auto;right:auto;display:inline-flex;width:auto;padding:3px 9px;border-radius:8px">3 · 栅格 5 列</span>
+          <!-- node 1 (annotated representative) -->
+          <div class="pnode" id="el-pnode">
+            <span class="bm tr dim" data-idx="4" title="pname 字号字体">4</span>
+            <span class="bm tr tok" data-idx="5" style="top:32px" title="pver 字体色">5</span>
+            <span class="bm bl dim" data-idx="6" style="bottom:60px" title="pstate 状态徽章">6</span>
+            <span class="bm bl dim" data-idx="7" style="bottom:34px" title="pmeta 间距字号">7</span>
+            <span class="bm bl dim" data-idx="8" style="bottom:8px" title="pbar 进度条">8</span>
+            <span class="bm tr tok" data-idx="9" style="top:60px;right:-2px" title="Planner 角色色">9</span>
+            <div class="top"><span class="pname">Planner</span><span class="pver">v1.2.0</span></div>
+            <div class="pstate run"><span class="d"></span>运行中</div>
+            <div class="pmeta"><span>调用 182</span><span>成功率 98%</span></div>
+            <div class="pbar"><span style="background:var(--a-planner);width:98%"></span></div>
+            <div class="pnode-tools"><button>暂停</button><button>详情</button></div>
+          </div>
+          <!-- nodes 2-5 -->
+          <div class="pnode"><div class="top"><span class="pname">Research</span><span class="pver">v1.1.0</span></div><div class="pstate run"><span class="d"></span>运行中</div><div class="pmeta"><span>调用 179</span><span>成功率 92%</span></div><div class="pbar"><span style="background:var(--a-research);width:92%"></span></div><div class="pnode-tools"><button>暂停</button><button>详情</button></div></div>
+          <div class="pnode"><div class="top"><span class="pname">Writer</span><span class="pver">v2.0.1</span></div><div class="pstate done"><span class="d"></span>已完成</div><div class="pmeta"><span>调用 176</span><span>成功率 96%</span></div><div class="pbar"><span style="background:var(--a-writer);width:96%"></span></div><div class="pnode-tools"><button>恢复</button><button>详情</button></div></div>
+          <div class="pnode"><div class="top"><span class="pname">Reviewer</span><span class="pver">v1.3.0</span></div><div class="pstate idle"><span class="d"></span>待命</div><div class="pmeta"><span>调用 174</span><span>成功率 100%</span></div><div class="pbar"><span style="background:var(--a-reviewer);width:100%"></span></div><div class="pnode-tools"><button>唤醒</button><button>详情</button></div></div>
+          <div class="pnode"><div class="top"><span class="pname">Publisher</span><span class="pver">v1.0.0</span></div><div class="pstate idle"><span class="d"></span>待命</div><div class="pmeta"><span>调用 126</span><span>成功率 98%</span></div><div class="pbar"><span style="background:var(--a-publisher);width:98%"></span></div><div class="pnode-tools"><button>唤醒</button><button>详情</button></div></div>
+        </div>
+      </div>
+
+      <!-- TASKS + FEED -->
+      <div class="grid-2">
+        <div class="card" id="el-task">
+          <span class="bm tl dim" data-idx="10" title="任务卡片">10</span>
+          <span class="bm tr tok" data-idx="11" title="chip 样式">11</span>
+          <div class="card-head"><div><h3>当前运行热点任务</h3><div class="desc">优先级队列 · 按 SLA 排序 · 点击查看 Trace</div></div></div>
+          <div class="filters">
+            <button class="chip-btn active">全部</button><button class="chip-btn">科技</button><button class="chip-btn">财经</button><button class="chip-btn">国际</button><button class="chip-btn">娱乐</button>
+          </div>
+          <div class="task-card" id="el-taskcard">
+            <span class="bm out dim" data-idx="12" title="task-card 容器">12</span>
+            <div class="ticon" id="el-ticon"><span class="bm tr tok" data-idx="13" style="top:42px;right:48px" title="ticon 框尺寸">13</span>🔥</div>
+            <div class="tmain"><div class="tt">某科技巨头发布新一代 AI 芯片，算力翻倍</div><div class="ts"><span>科技</span><span>热度 94</span><span>目标:中/英</span><span>ETA 3.1分</span></div></div>
+            <span class="pill brand">Writer</span>
+          </div>
+          <div class="task-card"><div class="ticon">💹</div><div class="tmain"><div class="tt">美联储维持利率不变，鲍威尔释放鸽派信号</div><div class="ts"><span>财经</span><span>热度 88</span><span>目标:中</span><span>ETA 4.6分</span></div></div><span class="pill info">Research</span></div>
+          <div class="task-card"><div class="ticon">🌏</div><div class="tmain"><div class="tt">联合国气候峰会达成新减排框架</div><div class="ts"><span>国际</span><span>热度 81</span><span>目标:中/英/日</span><span>ETA 5.2分</span></div></div><span class="pill warn">待人工</span></div>
+          <div class="task-card"><div class="ticon">🎬</div><div class="tmain"><div class="tt">暑期档票房破纪录，国产动画领跑</div><div class="ts"><span>娱乐</span><span>热度 76</span><span>目标:中</span><span>ETA 6.0分</span></div></div><span class="pill pass">已发布</span></div>
+        </div>
+        <div class="card" id="el-feed">
+          <span class="bm tl dim" data-idx="14" title="事件流容器">14</span>
+          <span class="bm tr dim" data-idx="15" style="top:18px" title="推送按钮">15</span>
+          <span class="bm bl dim" data-idx="16" title="feed 行规格">16</span>
+          <span class="bm tr tok" data-idx="17" style="top:48px" title="ftime 字体">17</span>
+          <div class="card-head"><div><h3>全链路事件流</h3><div class="desc">Trace · Metric · Log 三位一体</div></div><span class="pp"><span class="ico"></span>实时推送</span></div>
+          <div class="feed">
+            <div class="fitem"><span class="ftime">14:02</span><span class="fdot" style="background:var(--a-planner)"></span><span class="ftxt"><b>Planner</b> 识别热点「AI 芯片发布」，热度 94，分配至 Research</span></div>
+            <div class="fitem"><span class="ftime">14:02</span><span class="fdot" style="background:var(--a-research)"></span><span class="ftxt"><b>Research</b> 召回 28 条证据，冲突标记 1 处已降权</span></div>
+            <div class="fitem"><span class="ftime">14:03</span><span class="fdot" style="background:var(--a-writer)"></span><span class="ftxt"><b>Writer</b> 生成中 · 引用覆盖 100% · 模板 deep_dive</span></div>
+            <div class="fitem"><span class="ftime">14:01</span><span class="fdot" style="background:var(--warn)"></span><span class="ftxt"><b>合规</b> 国际稿件地缘表述触发人工介入节点</span></div>
+            <div class="fitem"><span class="ftime">14:00</span><span class="fdot" style="background:var(--a-reviewer)"></span><span class="ftxt"><b>Reviewer</b> 通过「美联储利率」事实核查，四维 4.2</span></div>
+            <div class="fitem"><span class="ftime">13:59</span><span class="fdot" style="background:var(--a-publisher)"></span><span class="ftxt"><b>Publisher</b> 灰度发布至站内 Feed / 微博，CTR 观察中</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== sticky right-side spec index ===== -->
+  <aside class="index" id="index">
+    <div class="index-head">
+      <h3>规范索引 · Spec Index</h3>
+      <div class="hint">点画板上的编号 ↔ 点此行 → 互相同步高亮 · 拖动滚动</div>
+    </div>
+    <div class="idx-list" id="idxList"><!-- generated by JS --></div>
+  </aside>
+
+  <!-- ============ SPEC TABLES ============ -->
+  <div class="sec-h full">组件规格 · Component Specs</div>
+  <div class="spec-grid full">
+    <div class="sheet">
+      <h4>容器 / 卡片 <span class="badge">CARD</span></h4>
+      <table>
+        <tr><th>属性</th><th>值</th><th>Token / 备注</th></tr>
+        <tr><td>内边距</td><td class="mono">20px</td><td><span class="kv"><span class="prop">padding</span>.card</span></td></tr>
+        <tr><td>圆角</td><td class="mono">16px</td><td><span class="kv"><span class="prop">border-radius</span>一致视觉语言</span></td></tr>
+        <tr><td>边框</td><td class="mono">1px solid</td><td><span class="kv"><span class="prop">颜色</span><span class="sw" style="background:#332D24"></span>#332D24 (--border)</span></td></tr>
+        <tr><td>背景</td><td class="mono">surface-1</td><td><span class="kv"><span class="prop">深色</span><span class="sw" style="background:#1E1A16"></span>#1E1A16</span></td></tr>
+        <tr><td>阴影</td><td class="mono">0 8px 24px -12px</td><td><span class="kv"><span class="prop">--shadow</span>rgba(0,0,0,.6)</span></td></tr>
+        <tr><td>栅格间距</td><td class="mono">18px / 14px</td><td><span class="kv"><span class="prop">.grid-2 / .pipe</span>响应式断点见 DESIGN_SYSTEM</span></td></tr>
+      </table>
+    </div>
+    <div class="sheet">
+      <h4>Pipeline 节点 <span class="badge">PNODE ×5</span></h4>
+      <table>
+        <tr><th>属性</th><th>值</th><th>Token / 备注</th></tr>
+        <tr><td>布局</td><td class="mono">5×1fr 栅格</td><td><span class="kv"><span class="prop">gap</span>14px · ≤1180px 降为 3 列</span></td></tr>
+        <tr><td>节点内边距</td><td class="mono">15px</td><td><span class="kv"><span class="prop">.pnode padding</span></span></td></tr>
+        <tr><td>节点圆角</td><td class="mono">14px</td><td><span class="kv"><span class="prop">border-radius</span></span></td></tr>
+        <tr><td>pname</td><td class="mono">14px / 600</td><td><span class="kv"><span class="prop">font</span>Space Grotesk</span></td></tr>
+        <tr><td>pver</td><td class="mono">10.5px</td><td><span class="kv"><span class="prop">font</span>IBM Plex Mono · #847A6B</span></td></tr>
+        <tr><td>pstate</td><td class="mono">11px / 600</td><td><span class="kv"><span class="prop">padding</span>3px 9px r20</span></td></tr>
+        <tr><td>进度条</td><td class="mono">高 5px</td><td><span class="kv"><span class="prop">.pbar</span>外框 surface-3</span></td></tr>
+        <tr><td>工具按钮</td><td class="mono">11.5px / 600</td><td><span class="kv"><span class="prop">padding</span>6px 8px r8 · gap 6px</span></td></tr>
+      </table>
+    </div>
+    <div class="sheet">
+      <h4>节点状态矩阵 <span class="badge">STATES</span></h4>
+      <table>
+        <tr><th>状态</th><th>背景</th><th>文字 / 点</th><th>语义</th></tr>
+        <tr><td>run 运行中</td><td><span class="sw" style="background:#FF7A45"></span>brand 16% 透明</td><td class="mono">#FF9166 · 脉冲</td><td>活跃执行</td></tr>
+        <tr><td>idle 待命</td><td><span class="sw" style="background:#312A22"></span>surface-3</td><td class="mono">#847A6B</td><td>等待上游</td></tr>
+        <tr><td>done 完成</td><td><span class="sw" style="background:#4ADE80"></span>success 16%</td><td class="mono">#4ADE80</td><td>已结束</td></tr>
+        <tr><td>role 角色色</td><td colspan="3" class="mono">Planner #FF7A45 · Research #2DD4BF · Writer #F5B544 · Reviewer #4ADE80 · Publisher #60A5FA</td></tr>
+        <tr><td>进度条</td><td colspan="3" class="mono">width = 成功率% · 颜色 = role 色</td></tr>
+      </table>
+    </div>
+    <div class="sheet">
+      <h4>任务卡片 / 筛选 <span class="badge">TASK</span></h4>
+      <table>
+        <tr><th>属性</th><th>值</th><th>Token / 备注</th></tr>
+        <tr><td>卡片内边距</td><td class="mono">13px 15px</td><td><span class="kv"><span class="prop">.task-card</span>圆角 12px</span></td></tr>
+        <tr><td>卡片间距</td><td class="mono">11px</td><td><span class="kv"><span class="prop">margin-bottom</span></span></td></tr>
+        <tr><td>图标框</td><td class="mono">40×40 r10</td><td><span class="kv"><span class="prop">.ticon</span>brand-soft 底 · 18px</span></td></tr>
+        <tr><td>标题 tt</td><td class="mono">13.5px / 600</td><td><span class="kv"><span class="prop">ellipsis</span>单行截断</span></td></tr>
+        <tr><td>副信息 ts</td><td class="mono">11.5px</td><td><span class="kv"><span class="prop">font</span>Mono · #847A6B · gap 10px</span></td></tr>
+        <tr><td>筛选 chip</td><td class="mono">6px 13px r20</td><td><span class="kv"><span class="prop">active</span>brand-soft 底 + brand 边</span></td></tr>
+        <tr><td>归属 pill</td><td class="mono">11.5px</td><td><span class="kv"><span class="prop">Writer</span>brand · Research info · 人工 warn · 已发布 pass</span></td></tr>
+      </table>
+    </div>
+    <div class="sheet">
+      <h4>事件流 Feed <span class="badge">FEED</span></h4>
+      <table>
+        <tr><th>属性</th><th>值</th><th>Token / 备注</th></tr>
+        <tr><td>行内边距</td><td class="mono">9px 4px</td><td><span class="kv"><span class="prop">.fitem</span>底部 1px 分隔线</span></td></tr>
+        <tr><td>行间距</td><td class="mono">2px</td><td><span class="kv"><span class="prop">gap</span></span></td></tr>
+        <tr><td>时间 ftime</td><td class="mono">46px 宽</td><td><span class="kv"><span class="prop">font</span>11px Mono #847A6B</span></td></tr>
+        <tr><td>状态点</td><td class="mono">7px 圆</td><td><span class="kv"><span class="prop">.fdot</span>颜色 = 来源角色色</span></td></tr>
+        <tr><td>正文 ftxt</td><td class="mono">12.5px</td><td><span class="kv"><span class="prop">color</span>text-2 · &lt;b&gt; text</span></td></tr>
+        <tr><td>容器</td><td class="mono">max-h 420px</td><td><span class="kv"><span class="prop">.feed</span>纵向滚动</span></td></tr>
+        <tr><td>推送按钮</td><td class="mono">12px r8</td><td><span class="kv"><span class="prop">.pp</span>暂停态点变灰</span></td></tr>
+      </table>
+    </div>
+    <div class="sheet">
+      <h4>抽屉 / 弹窗 <span class="badge">OVERLAY</span></h4>
+      <table>
+        <tr><th>属性</th><th>值</th><th>Token / 备注</th></tr>
+        <tr><td>抽屉宽</td><td class="mono">430px</td><td><span class="kv"><span class="prop">.drawer</span>max 92vw · 右滑入 .35s</span></td></tr>
+        <tr><td>抽屉头</td><td class="mono">18px 20px</td><td><span class="kv"><span class="prop">padding</span>底 1px 分隔</span></td></tr>
+        <tr><td>抽屉体</td><td class="mono">20px</td><td><span class="kv"><span class="prop">.drawer-body</span>纵向滚动</span></td></tr>
+        <tr><td>遮罩</td><td class="mono">rgba(0,0,0,.5)</td><td><span class="kv"><span class="prop">.drawer-scrim</span>点击关闭</span></td></tr>
+        <tr><td>弹窗</td><td class="mono">460px</td><td><span class="kv"><span class="prop">.modal</span>r16 · padding 22px</span></td></tr>
+        <tr><td>关闭键</td><td class="mono">32×32 r9</td><td><span class="kv"><span class="prop">.x-btn</span>ESC 亦可关</span></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ TOKENS ============ -->
+  <div class="sec-h full">颜色 Token 附录 · Color Tokens</div>
+  <div class="spec-grid full">
+    <div class="sheet">
+      <h4>语义 / 品牌色 <span class="badge">SEMANTIC</span></h4>
+      <table>
+        <tr><th>Token</th><th>深色</th><th>浅色</th><th>用途</th></tr>
+        <tr><td class="mono">--brand</td><td><span class="sw" style="background:#FF7A45"></span>#FF7A45</td><td><span class="sw" style="background:#EA5B22"></span>#EA5B22</td><td>主操作 / Planner</td></tr>
+        <tr><td class="mono">--success</td><td><span class="sw" style="background:#4ADE80"></span>#4ADE80</td><td>#15924A</td><td>通过 / 完成</td></tr>
+        <tr><td class="mono">--warn</td><td><span class="sw" style="background:#FBBF24"></span>#FBBF24</td><td>#B7791F</td><td>警告 / 修复中</td></tr>
+        <tr><td class="mono">--error</td><td><span class="sw" style="background:#F87171"></span>#F87171</td><td>#D6453D</td><td>拦截 / 失败</td></tr>
+        <tr><td class="mono">--info</td><td><span class="sw" style="background:#60A5FA"></span>#60A5FA</td><td>#2563C9</td><td>观察 / Research外</td></tr>
+      </table>
+    </div>
+    <div class="sheet">
+      <h4>Agent 角色色 <span class="badge">ROLE</span></h4>
+      <table>
+        <tr><th>Agent</th><th>深色</th><th>浅色</th><th>进度条</th></tr>
+        <tr><td class="mono">Planner</td><td><span class="sw" style="background:#FF7A45"></span>#FF7A45</td><td>#E0531C</td><td>✔</td></tr>
+        <tr><td class="mono">Research</td><td><span class="sw" style="background:#2DD4BF"></span>#2DD4BF</td><td>#0E9C8C</td><td>✔</td></tr>
+        <tr><td class="mono">Writer</td><td><span class="sw" style="background:#F5B544"></span>#F5B544</td><td>#C98A12</td><td>✔</td></tr>
+        <tr><td class="mono">Reviewer</td><td><span class="sw" style="background:#4ADE80"></span>#4ADE80</td><td>#15924A</td><td>✔</td></tr>
+        <tr><td class="mono">Publisher</td><td><span class="sw" style="background:#60A5FA"></span>#60A5FA</td><td>#2563C9</td><td>✔</td></tr>
+      </table>
+    </div>
+    <div class="sheet">
+      <h4>中性表面 <span class="badge">NEUTRAL</span></h4>
+      <table>
+        <tr><th>Token</th><th>深色</th><th>浅色</th></tr>
+        <tr><td class="mono">--bg</td><td><span class="sw" style="background:#161310"></span>#161310</td><td>#FAF8F5</td></tr>
+        <tr><td class="mono">--surface-1</td><td><span class="sw" style="background:#1E1A16"></span>#1E1A16</td><td>#FFFFFF</td></tr>
+        <tr><td class="mono">--surface-2</td><td><span class="sw" style="background:#26211B"></span>#26211B</td><td>#F6F2EC</td></tr>
+        <tr><td class="mono">--surface-3</td><td><span class="sw" style="background:#312A22"></span>#312A22</td><td>#EDE7DD</td></tr>
+        <tr><td class="mono">--border</td><td><span class="sw" style="background:#332D24"></span>#332D24</td><td>#E9E2D7</td></tr>
+        <tr><td class="mono">--text / 2 / 3</td><td><span class="sw" style="background:#F3EEE6"></span>#F3EEE6 / #B6AC9C / #847A6B</td><td>#1C1814 / #5C5347 / #8B8071</td></tr>
+      </table>
+    </div>
+    <div class="sheet">
+      <h4>字体阶梯 <span class="badge">TYPE</span></h4>
+      <table>
+        <tr><th>用途</th><th>字体</th><th>字号 / 字重</th></tr>
+        <tr><td>标题 / pname</td><td class="mono">Space Grotesk</td><td>14–17px / 600</td></tr>
+        <tr><td>正文 / 描述</td><td class="mono">IBM Plex Sans SC</td><td>12–14px / 400</td></tr>
+        <tr><td>数字 / 代码</td><td class="mono">IBM Plex Mono</td><td>10.5–12px</td></tr>
+        <tr><td>对比要求</td><td colspan="2" class="note">正文 text 对 bg ≥ 7:1；辅助 text-2 对 bg ≥ 4.5:1（WCAG AA）</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- ============ SLICES ============ -->
+  <div class="sec-h full">切图清单 · Export Slices</div>
+  <div class="sheet full">
+    <h4>可交付资产 <span class="badge">ASSETS</span> <span class="note" style="font-weight:400;text-transform:none;letter-spacing:0">注：本视图 90% 元素由 CSS 绘制，无需位图；仅以下资产需导出</span></h4>
+    <div class="slice">
+      <div class="ico-box">🔥</div>
+      <div class="meta"><div class="nm">task-icon-hot</div><div class="ds">科技热点任务图标（emoji 占位，可替换为品牌 SVG）</div></div>
+      <div class="fmt"><b>SVG</b> 40×40<br>+ PNG @2x/3x<br>r10 · brand-soft 底</div>
+    </div>
+    <div class="slice">
+      <div class="ico-box">💹</div>
+      <div class="meta"><div class="nm">task-icon-finance</div><div class="ds">财经任务图标</div></div>
+      <div class="fmt"><b>SVG</b> 40×40<br>+ PNG @2x/3x</div>
+    </div>
+    <div class="slice">
+      <div class="ico-box">🌏</div>
+      <div class="meta"><div class="nm">task-icon-world</div><div class="ds">国际任务图标</div></div>
+      <div class="fmt"><b>SVG</b> 40×40<br>+ PNG @2x/3x</div>
+    </div>
+    <div class="slice">
+      <div class="ico-box">🎬</div>
+      <div class="meta"><div class="nm">task-icon-ent</div><div class="ds">娱乐任务图标</div></div>
+      <div class="fmt"><b>SVG</b> 40×40<br>+ PNG @2x/3x</div>
+    </div>
+    <div class="slice">
+      <div class="ico-box">⚡</div>
+      <div class="meta"><div class="nm">status-dot</div><div class="ds">状态点（运行/待命/完成）— 如不用 CSS 圆点，导出 3 态</div></div>
+      <div class="fmt"><b>SVG</b> 7×7<br>run #FF7A45<br>idle #847A6B<br>done #4ADE80</div>
+    </div>
+    <div class="slice">
+      <div class="ico-box">◐</div>
+      <div class="meta"><div class="nm">role-color-bar</div><div class="ds">进度条填充（按角色色）— 建议 CSS 渐变，无需位图</div></div>
+      <div class="fmt"><b>CSS</b> 无需切图<br>width=成功率%</div>
+    </div>
+    <div class="slice">
+      <div class="ico-box">⤢</div>
+      <div class="meta"><div class="nm">drawer / modal</div><div class="ds">抽屉与弹窗为组件级，由 CSS 实现（430px / 460px）</div></div>
+      <div class="fmt"><b>CSS</b> 组件<br>非位图</div>
+    </div>
+  </div>
+
+  <div class="foot full">
+    <span>TrendForge Console · 生产流水线标注切图 · 由 UI Designer 产出</span>
+    <span>测量基准：深色主题(default) · 设计栅格 4px · 圆角语言 8/10/12/14/16 · WCAG AA</span>
+  </div>
+</main>
+
+<script>
+// === Spec index data — all measurements + tokens, single source of truth ===
+const SPEC = [
+  {n:1, kind:'dim', ttl:'容器卡片', ds:'<span class="prop">.card</span> · 圆角 <b class="val">16px</b> · 内边距 <b class="val">20px</b> · 边框 1px #332D24'},
+  {n:2, kind:'tok', ttl:'卡片背景 Token', ds:'<span class="prop">--surface-1</span> · 深 <b class="val">#1E1A16</b> · 浅 #FFFFFF · 阴影 --shadow'},
+  {n:3, kind:'dim', ttl:'节点栅格', ds:'<span class="prop">.pipe</span> · 5×1fr · 列间距 <b class="val">14px</b> · ≤1180px 降为 3 列'},
+  {n:4, kind:'dim', ttl:'pname 字号字体', ds:'<span class="prop">.pname</span> · <b class="val">14px / 600</b> · Space Grotesk'},
+  {n:5, kind:'tok', ttl:'pver 字体色', ds:'<span class="prop">.pver</span> · <b class="val">10.5px</b> · IBM Plex Mono · #847A6B (text-3)'},
+  {n:6, kind:'dim', ttl:'pstate 状态徽章', ds:'<span class="prop">.pstate</span> · <b class="val">11px / 600</b> · padding 3px 9px · r20 · 内含 7px 状态点'},
+  {n:7, kind:'dim', ttl:'pmeta 间距字号', ds:'<span class="prop">.pmeta</span> · <b class="val">11.5px</b> · IBM Plex Mono · #847A6B · top 间距 10px · 两端 justify'},
+  {n:8, kind:'dim', ttl:'pbar 进度条', ds:'<span class="prop">.pbar</span> · 高 <b class="val">5px</b> · r5 · 底 surface-3 · 填充 = 角色色 · width = 成功率%'},
+  {n:9, kind:'tok', ttl:'Planner 角色色', ds:'<span class="prop">--a-planner</span> · 深 <b class="val">#FF7A45</b> · 浅 #E0531C · 进度条 / 状态点统一使用'},
+  {n:10, kind:'dim', ttl:'任务卡片', ds:'<span class="prop">.task-card</span> · 圆角 <b class="val">12px</b> · padding 13px 15px · 卡片间距 11px · hover 不变'},
+  {n:11, kind:'tok', ttl:'筛选 chip 样式', ds:'<span class="prop">.chip-btn</span> · padding <b class="val">6px 13px</b> · r20 · 字号 12px/500 · active 态 brand-soft 底 + brand 边'},
+  {n:12, kind:'dim', ttl:'task-card 行布局', ds:'<span class="prop">.task-card</span> · flex · gap <b class="val">14px</b> · ticon | tmain(flex:1) | pill'},
+  {n:13, kind:'tok', ttl:'ticon 图标框', ds:'<span class="prop">.ticon</span> · <b class="val">40×40</b> · r10 · brand-soft 底 · 字号 18px'},
+  {n:14, kind:'dim', ttl:'事件流容器', ds:'<span class="prop">.feed</span> · flex column · gap 2px · max-h 420px · 纵向滚动 · 右侧 4px 滚动条留白'},
+  {n:15, kind:'dim', ttl:'推送按钮', ds:'<span class="prop">.pp</span> · 12px · r8 · padding 5px 11px · 含 8px 状态点(运行=#4ADE80 暂停=灰)'},
+  {n:16, kind:'dim', ttl:'feed 行规格', ds:'<span class="prop">.fitem</span> · padding <b class="val">9px 4px</b> · 底 1px 分隔线 · gap 11px · 字号 12.5px'},
+  {n:17, kind:'tok', ttl:'ftime 时间列', ds:'<span class="prop">.ftime</span> · 宽 <b class="val">46px</b> · 11px · IBM Plex Mono · #847A6B (text-3)'},
+];
+
+// === render index rows ===
+const idxList = document.getElementById('idxList');
+SPEC.forEach(s => {
+  const row = document.createElement('div');
+  row.className = 'idx-row' + (s.kind === 'tok' ? ' tok' : '');
+  row.dataset.idx = s.n;
+  row.innerHTML = `<div class="idx-n">${s.n}</div><div class="idx-body"><div class="ttl">${s.ttl}</div><div class="ds">${s.ds}</div></div>`;
+  idxList.appendChild(row);
+});
+
+// === sync artboard badge ↔ index row ===
+const bms = document.querySelectorAll('.bm');
+const rows = document.querySelectorAll('.idx-row');
+const cards = document.querySelectorAll('.artboard .card, .artboard .pnode, .artboard .task-card, .artboard .ticon, .artboard .feed, .artboard .pipe, .artboard .card-head');
+let activeN = null;
+function setActive(n){
+  activeN = n;
+  bms.forEach(b => b.dataset.active = b.dataset.idx == n ? '1' : '0');
+  rows.forEach(r => r.classList.toggle('active', r.dataset.idx == n));
+  // highlight the closest target element
+  cards.forEach(c => c.classList.remove('hl-card'));
+  if (n) {
+    const bm = document.querySelector(`.bm[data-idx="${n}"]`);
+    if (bm) {
+      const t = bm.parentElement;
+      if (t && t.classList) t.classList.add('hl-card');
+    }
+    // scroll the matching index row into view inside the sticky panel
+    const row = document.querySelector(`.idx-row[data-idx="${n}"]`);
+    if (row) row.scrollIntoView({block:'nearest', behavior:'smooth'});
+  }
+}
+bms.forEach(b => b.addEventListener('click', e => { e.stopPropagation(); setActive(b.dataset.idx); }));
+rows.forEach(r => r.addEventListener('click', () => setActive(r.dataset.idx)));
+document.addEventListener('click', e => {
+  if (!e.target.closest('.bm') && !e.target.closest('.idx-row')) setActive(null);
+});
+
+// === annotation toggle ===
+document.getElementById('tg').addEventListener('click', () => document.body.classList.toggle('show-ann'));
+
+// === theme tabs ===
+document.getElementById('themeTabs').querySelectorAll('button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.documentElement.setAttribute('data-theme', btn.dataset.t);
+    document.getElementById('themeTabs').querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+  });
+});
+
+// open with first badge highlighted so user sees the link working
+setActive(1);
+</script>
+</body>
+</html>

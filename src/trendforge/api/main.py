@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="FluxPress API",
+    title="TrendForge API",
     description="AI Native 全球内容供给平台",
     version="1.0.0",
     lifespan=lifespan,
@@ -285,6 +285,49 @@ async def experiment_report(experiment_id: str, session: AsyncSession = Depends(
         raise HTTPException(404, str(e))
 
 
+@app.get("/api/prompts")
+async def list_all_prompts(session: AsyncSession = Depends(get_db)):
+    """列出全部 Prompt（每个 prompt_id 取最新版本）"""
+    from models import Prompt
+    rows = (await session.execute(select(Prompt).order_by(Prompt.created_at.desc()))).scalars().all()
+    seen = {}
+    for p in rows:
+        if p.prompt_id not in seen:
+            seen[p.prompt_id] = p
+    prompts = [{
+        "prompt_id": p.prompt_id, "agent": p.agent, "scene": p.scene,
+        "language": p.language, "status": p.status, "version": p.version,
+        "eval_score": p.eval_score, "author": p.author, "tags": p.tags,
+        "created_at": p.created_at.isoformat() if p.created_at else None,
+    } for p in seen.values()]
+    return {"prompts": prompts, "count": len(prompts)}
+
+
+@app.get("/api/experiments")
+async def list_experiments(session: AsyncSession = Depends(get_db)):
+    """列出全部 A/B 实验及其显著性报告"""
+    from models import PromptExperiment
+    from prompts import ExperimentManager
+    rows = (await session.execute(
+        select(PromptExperiment).order_by(PromptExperiment.start_at.desc())
+    )).scalars().all()
+    em = ExperimentManager()
+    out = []
+    for e in rows:
+        try:
+            report = await em.report(session, e.experiment_id)
+        except Exception:
+            report = None
+        out.append({
+            "experiment_id": e.experiment_id, "agent": e.agent, "scene": e.scene,
+            "control_version": e.control_version, "treatment_version": e.treatment_version,
+            "traffic_split": e.traffic_split, "status": e.status,
+            "start_at": e.start_at.isoformat() if e.start_at else None,
+            "report": report,
+        })
+    return {"experiments": out, "count": len(out)}
+
+
 # ============ 数据分析 ============
 @app.get("/api/analytics/funnel")
 async def api_funnel(days: int = Query(7), session: AsyncSession = Depends(get_db)):
@@ -306,6 +349,32 @@ async def api_bad_cases(days: int = Query(30), session: AsyncSession = Depends(g
     return await analytics.bad_case_stats(session, days)
 
 
+@app.get("/api/bad-cases")
+async def list_bad_cases(days: int = Query(90), session: AsyncSession = Depends(get_db)):
+    """逐条 Bad Case 列表（关联内容标题）"""
+    from datetime import datetime, timedelta
+    from models import BadCase, Content
+    since = datetime.utcnow() - timedelta(days=days)
+    rows = (await session.execute(
+        select(BadCase).where(BadCase.created_at >= since).order_by(BadCase.created_at.desc())
+    )).scalars().all()
+    cids = [r.content_id for r in rows if r.content_id]
+    titles = {}
+    if cids:
+        for c in (await session.execute(
+            select(Content).where(Content.content_id.in_(cids))
+        )).scalars().all():
+            titles[c.content_id] = c.title
+    return [{
+        "id": b.bad_case_id, "content_id": b.content_id,
+        "content": titles.get(b.content_id, b.content_id),
+        "l1": b.category_l1, "l2": b.category_l2, "severity": b.severity,
+        "status": b.status, "source": b.source, "reason": b.description,
+        "assignee": b.assigned_to,
+        "created": b.created_at.isoformat() if b.created_at else None,
+    } for b in rows]
+
+
 @app.get("/api/analytics/production")
 async def api_production(days: int = Query(7), session: AsyncSession = Depends(get_db)):
     return await analytics.production_stats(session, days)
@@ -314,6 +383,35 @@ async def api_production(days: int = Query(7), session: AsyncSession = Depends(g
 @app.get("/api/analytics/cost")
 async def api_cost(days: int = Query(7), session: AsyncSession = Depends(get_db)):
     return await analytics.cost_stats(session, days)
+
+
+@app.get("/api/analytics/cost-trend")
+async def api_cost_trend(days: int = Query(12), session: AsyncSession = Depends(get_db)):
+    """成本与效率时间序列（按天聚合，跨数据库方言安全）"""
+    from datetime import datetime, timedelta
+    from models import Task, Content
+    since = datetime.utcnow() - timedelta(days=days)
+    tasks = (await session.execute(
+        select(Task).where(Task.created_at >= since, Task.status == "succeeded")
+    )).scalars().all()
+    buckets = {}
+    for t in tasks:
+        if not t.created_at:
+            continue
+        d = t.created_at.date().isoformat()
+        buckets.setdefault(d, []).append(t)
+    labels = sorted(buckets.keys())
+    cost = [round(sum(x.total_cost_cny for x in buckets[d]) / len(buckets[d]), 4) for d in labels]
+    contents = (await session.execute(
+        select(Content).where(Content.published_at >= since)
+    )).scalars().all()
+    eff_map = {}
+    for c in contents:
+        if c.published_at:
+            k = c.published_at.date().isoformat()
+            eff_map[k] = eff_map.get(k, 0) + 1
+    eff = [eff_map.get(d, 0) for d in labels]
+    return {"labels": labels, "cost": cost, "eff": eff}
 
 
 # ============ 内容中心（平台化）============
@@ -472,11 +570,11 @@ async def demo_stats(session: AsyncSession = Depends(get_db)):
 # ============ 根路径：API 文档引导 ============
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    return """<html><head><meta charset='utf-8'><title>FluxPress API</title>
+    return """<html><head><meta charset='utf-8'><title>TrendForge API</title>
     <style>body{font-family:system-ui;max-width:760px;margin:60px auto;padding:0 24px;color:#1f2937}
     h1{color:#6366f1}a{color:#6366f1}.card{background:#f7f8fc;padding:16px;border-radius:12px;margin:12px 0}
     code{background:#eef2ff;padding:2px 6px;border-radius:4px}.tag{display:inline-block;background:#ddd6fe;color:#5b21b6;padding:2px 8px;border-radius:999px;font-size:12px;margin:2px}</style></head>
-    <body><h1>⚡ FluxPress API</h1><p>AI Native 全球内容供给平台</p>
+    <body><h1>⚡ TrendForge API</h1><p>AI Native 全球内容供给平台</p>
     <div class='card'>📖 交互式文档：<a href='/docs'>/docs</a>（Swagger UI）</div>
     <div class='card'>🔍 健康检查：<a href='/api/health'>/api/health</a></div>
     <div class='card'>🤖 LLM 厂商：<a href='/api/llm/vendors'>/api/llm/vendors</a> · 测试：<a href='/api/llm/test'>/api/llm/test</a></div>

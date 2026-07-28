@@ -280,6 +280,13 @@ strategies:
     gray_release_ratio: 0  # 不灰度，人工确认后直发
 ```
 
+```yaml
+# 灰度发布 vs A/B 实验 说明
+# - Publisher 灰度发布(canary)：单版本 10% 小流量观察护栏指标，无对照组，不写 experiment_assignments
+# - A/B 实验：多版本对照，走 experiment_assignments 分桶，用于效果决策
+# 二者独立，canary 不参与实验分桶，避免双重分桶/实验污染
+```
+
 ### 9.2 Agent 替换
 
 Agent 实现注册表，运行时按配置选择：
@@ -309,3 +316,11 @@ AGENT_REGISTRY = {
 - Milvus / ES 集群；
 - LLM 多供应商（OpenAI / Claude / 自建）；
 - 跨可用区部署。
+
+## 12. 全网撤回 Runbook（PB-4：严重问题 5 分钟内全网撤回）
+
+- 触发：合规告警 / 舆情 / 人工红色按钮。
+- 动作：Publisher 监听撤回指令，多渠道并行下线（见 Agent 架构 §8.5）。
+- SLA：从指令下发到全渠道下线 ≤ 5 分钟；单渠道失败转人工兜底并告警。
+- 演练：每月一次撤回演练，记录实际耗时，目标 P95 ≤ 4 分钟。
+- 复盘：每次真实撤回后 24h 内输出复盘。

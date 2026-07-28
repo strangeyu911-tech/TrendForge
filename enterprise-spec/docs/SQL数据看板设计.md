@@ -115,6 +115,33 @@ CREATE TABLE dws_content_daily (
 );
 ```
 
+### 2.4 Bad Case 明细表
+
+```sql
+CREATE TABLE bad_cases (
+  bad_case_id        TEXT PRIMARY KEY,
+  content_id         TEXT,
+  trace_id           TEXT,
+  topic_id           TEXT,
+  category_l1        TEXT,            -- F/H/C/G/Q/U/D
+  category_l2        TEXT,            -- F01/H02/...
+  severity           TEXT,            -- critical | major | minor
+  source             TEXT,            -- reviewer|user_report|data_anomaly|patrol
+  description        TEXT,
+  root_cause_hypothesis TEXT,
+  affected_prompt_versions TEXT[],
+  affected_agents    TEXT[],
+  status             TEXT,            -- open|in_fix|resolved|wontfix
+  assigned_to        TEXT,
+  created_at         TIMESTAMPTZ,
+  resolved_at        TIMESTAMPTZ,
+  fix_action         TEXT
+);
+CREATE INDEX idx_bc_content ON bad_cases(content_id);
+CREATE INDEX idx_bc_status  ON bad_cases(status);
+```
+与 `dwd_content_fact.is_bad_case` 关联核对，确保发布侧标记与 Bad Case 库一致。
+
 ---
 
 ## 3. 核心分析 SQL
@@ -161,9 +188,9 @@ SELECT
   ROUND(SUM(clicks)::numeric / NULLIF(SUM(impressions),0), 4) AS ctr
 FROM dws_content_daily
 WHERE dt >= CURRENT_DATE - INTERVAL '7 days'
-  AND SUM(impressions) >= 1000   -- 显著性过滤
 GROUP BY content_id
-HAVING SUM(clicks)::numeric / NULLIF(SUM(impressions),0) > 0.05
+HAVING SUM(impressions) >= 1000   -- 显著性过滤：仅统计曝光足够的 content
+   AND SUM(clicks)::numeric / NULLIF(SUM(impressions),0) > 0.05
 ORDER BY ctr DESC
 LIMIT 20;
 ```
@@ -259,21 +286,20 @@ SELECT
   e.experiment_id,
   a.variant,
   COUNT(DISTINCT a.content_id) AS articles,
-  ROUND(AVG(d.ctr),4) AS avg_ctr,
+  SUM(d.impressions) AS impressions,
+  SUM(d.clicks) AS clicks,
+  ROUND(SUM(d.clicks)::numeric / NULLIF(SUM(d.impressions),0), 4) AS avg_ctr,
   ROUND(AVG(d.read_rate),4) AS avg_read_rate,
-  ROUND(AVG(f.fact_consistency),4) AS avg_fact_consistency,
-  -- 显著性检验（CTR 用 Z-test 近似）
-  CASE
-    WHEN abs(avg_ctr_diff) / sqrt(avg_ctr_var/n) > 1.96 THEN 'significant'
-    ELSE 'not_significant'
-  END AS ctr_significance
+  ROUND(AVG(f.fact_consistency),4) AS avg_fact_consistency
 FROM experiment_assignments a
 JOIN dws_content_daily d ON d.content_id = a.content_id
 JOIN dwd_content_fact f ON f.content_id = a.content_id
 JOIN prompt_experiments e ON e.experiment_id = a.experiment_id
-WHERE e.status = 'running' OR e.status = 'concluded'
+WHERE e.status IN ('running','concluded')
 GROUP BY e.experiment_id, a.variant;
 ```
+
+> 显著性检验不在 SQL 内计算。上述查询按 variant 输出 `avg_ctr` 与样本曝光 `impressions`，由实验平台用两比例 Z 检验（scipy.stats.proportions_ztest）判定 p-value，规则见 `A_B实验方案.md` §5。
 
 ### 3.5 Bad Case 分析
 
@@ -378,3 +404,23 @@ ORDER BY 1;
 - 内容数据保留 1 年，行为数据 90 天；
 - 敏感品类数据访问需审批；
 - 看板按角色权限控制（RBAC）。
+
+---
+
+## 6. 单条成本测算（对账 PRD KR4 / 成本目标 ¥0.5）
+
+按 P50 链路估算单条内容成本（仅 LLM + 向量推理，不含存储/带宽）：
+
+| 环节 | 模型 | 输入 tokens | 输出 tokens | 单价(¥/1k) | 单条成本 |
+|------|------|------------|------------|-----------|----------|
+| Planner | gpt-4o-mini | 1,200 | 300 | 0.002 | ¥0.003 |
+| Research | gpt-4o-mini | 4,000 | 800 | 0.002 | ¥0.0096 |
+| Writer(draft) | gpt-4o-mini | 6,000 | 1,200 | 0.002 | ¥0.0144 |
+| Writer(quality) | gpt-4o | 6,000 | 1,200 | 0.03 | ¥0.216 |
+| Reviewer | gpt-4o-mini | 5,000 | 1,000 | 0.002 | ¥0.012 |
+| 向量化(约 103 evidences) | bge 自建 | - | - | - | ¥0.002 |
+| **合计** | | | | | **≈ ¥0.257** |
+
+- 结论：P50 链路单条 ≈ ¥0.26，低于 ¥0.5 设计目标，留有约 2x buffer；强模型(quality)占比最大，可通过分级与缓存进一步压降。
+- 护栏：单条 > ¥0.8 触发熔断（见 A/B 实验方案 §4.2）。
+- 注：单价为示例估值，上线前以实际账单校准。

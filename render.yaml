@@ -1,10 +1,10 @@
-# Render Blueprint — FluxPress 最低成本部署（免费层，Docker 构建）
+# Render Blueprint — TrendForge 最低成本部署（免费层，Docker 构建）
 # 使用：Render 控制台 New > Blueprint，选本仓库，Render 会在【仓库根目录】自动读取此文件
 # 注意：Blueprint 只认仓库根目录(repo root)的 render.yaml，本文件必须放在仓库根。
 
 services:
   - type: web
-    name: fluxpress-api
+    name: trendforge-api
     runtime: docker
     # 重要（踩坑记录）：
     # 按 Render 官方 Blueprint 规范，dockerfilePath / dockerContext 都是“相对仓库根(repo root)”解析，
@@ -32,6 +32,6 @@ services:
     # - /generate 调真实 GLM，需填 TF_GLM_API_KEY
     # - 升级付费层可挂载 disk 实现数据持久增长：
     #   disk:
-    #     name: fluxpress-data
+    #     name: trendforge-data
     #     mountPath: /app/data
     #     sizeGB: 1

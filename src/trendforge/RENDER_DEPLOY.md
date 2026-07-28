@@ -1,4 +1,4 @@
-# FluxPress Render 部署指南（2分钟拿公网地址）
+# TrendForge Render 部署指南（2分钟拿公网地址）
 
 > 最低成本方案：Render 免费层 + 数据打包进镜像 + 4 个核心 API。
 > 部署后任何人都能通过公网地址实时调用 /search /generate /workflow /stats。
@@ -14,7 +14,7 @@
 ### 1. 创建 Blueprint
 - Render 控制台 → **New** → **Blueprint**
 - 选择你的 GitHub 仓库
-- Render 会自动读取**仓库根目录**的 `render.yaml`，识别出 `fluxpress-api` 服务
+- Render 会自动读取**仓库根目录**的 `render.yaml`，识别出 `trendforge-api` 服务
 
 ### 2. 填入 LLM Key
 - 在环境变量中找到 `TF_GLM_API_KEY`，填入你的智谱 key
@@ -27,7 +27,7 @@
 ### 4. 拿到公网地址
 - 部署完成后，Render 给你一个地址，形如：
   ```
-  https://fluxpress-api.onrender.com
+  https://trendforge-api.onrender.com
   ```
 - 这就是你的 **Realtime API** 公网入口
 
@@ -35,29 +35,29 @@
 
 ```bash
 # 健康检查
-curl https://fluxpress-api.onrender.com/api/health
+curl https://trendforge-api.onrender.com/api/health
 
 # ① 数据统计
-curl https://fluxpress-api.onrender.com/stats
+curl https://trendforge-api.onrender.com/stats
 # → {"news_documents":268,"news_chunks":877,"prompts":3,...}
 
 # ② RAG 检索
-curl -X POST https://fluxpress-api.onrender.com/search \
+curl -X POST https://trendforge-api.onrender.com/search \
   -H "Content-Type: application/json" \
   -d '{"query":"OpenAI GPT","top_k":5}'
 
 # ③ 实时生成（8步Workflow，约60-120秒）
-curl -X POST https://fluxpress-api.onrender.com/generate \
+curl -X POST https://trendforge-api.onrender.com/generate \
   -H "Content-Type: application/json" \
   -d '{"topic":"OpenAI GPT-6 launch","country":"US"}'
 
 # ④ Workflow 日志
-curl -X POST https://fluxpress-api.onrender.com/workflow \
+curl -X POST https://trendforge-api.onrender.com/workflow \
   -H "Content-Type: application/json" \
   -d '{"topic":"AI芯片市场","country":"CN"}'
 
 # Swagger 文档
-open https://fluxpress-api.onrender.com/docs
+open https://trendforge-api.onrender.com/docs
 ```
 
 ## 免费层限制与应对
@@ -88,7 +88,7 @@ open https://fluxpress-api.onrender.com/docs
 ```yaml
     plan: starter
     disk:
-      name: fluxpress-data
+      name: trendforge-data
       mountPath: /app/data
       sizeGB: 1
 ```

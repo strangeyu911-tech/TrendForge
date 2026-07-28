@@ -26,6 +26,7 @@
 | 模型 | gpt-4o-mini vs claude-haiku | 质量、成本、时延 |
 | 发布时间 | 立即发布 vs 错峰发布 | CTR |
 | 标题风格 | 信息型 vs 悬念型 | CTR |
+| 人工基线 | AI 生成 vs 人工撰写（同期同品类）| CTR、成本、事实一致率 |
 
 ### 2.2 实验分类
 
@@ -102,6 +103,8 @@ def assign_bucket(content_id: str, experiment_id: str, splits: dict) -> str:
 阶段3：50% treatment，2 天 → 显著性达标
 阶段4：100% treatment（升版）
 ```
+
+> 说明：此处「灰度」为实验放量（ramp），与 Publisher 的 canary 灰度发布（无对照、仅观察护栏）不同，二者机制独立，详见 Workflow 设计 §9.1。
 
 任意阶段出现 Bad Case 激增或 CTR 显著下降 → 熔断回滚。
 
@@ -201,7 +204,8 @@ v1.3.0 财经类内容 CTR 7 日均值 0.038，低于目标 0.05。假设 v2.0.1
 - 变体：control=v1.3.0, treatment=v2.0.1
 - 分桶：50/50，content_id 哈希
 - 时长：7 天（2026-07-14 ~ 2026-07-20）
-- 样本：control 412 篇 / treatment 408 篇
+- 样本（篇）：control 412 / treatment 408
+- 总曝光/组：control ≈ 412,000 / treatment ≈ 408,000（按单篇 ~1000 曝光估算；样本量判定以曝光为准，见 §3.2）
 
 ## 3. 结果
 | 指标 | control | treatment | 差异 | p-value | 显著 |

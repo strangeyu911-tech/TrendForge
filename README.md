@@ -1,4 +1,4 @@
-# FluxPress — AI Native 全球内容供给平台
+# TrendForge — AI Native 全球内容供给平台
 
 > 把传统内容生产流程抽象为 AI 可以**持续执行、持续优化、持续学习**的系统。
 > Multi-Agent Workflow × RAG × Prompt Engineering × 数据反馈闭环 × 全球化内容策略
@@ -6,7 +6,7 @@
 一个面向互联网 AI 产品经理求职的作品集项目。它不是"一个 Agent"，而是一个**平台**：从热点检测、选题、检索、成稿、事实核查、审核、分发，到用户行为回流、Prompt 效果评估、Bad Case 闭环的完整内容供给飞轮。
 
 ```
-                         ┌─────────── FluxPress 平台八大中心 ───────────┐
+                         ┌─────────── TrendForge 平台八大中心 ───────────┐
   知识库   →   RAG   →   Multi-Agent   →   Prompt   →   Content   →   Experiment
  (KB)        检索        Workflow         Center       Center         Center
                                                           ↓
@@ -20,7 +20,7 @@
 
 **问题**：内容生产依赖人工选题、人工成稿、人工审核，难以规模化、难以全球化、难以持续优化。
 
-**方案**：FluxPress 用 Multi-Agent Workflow 自动化内容生产全链路，用 RAG 保证事实可溯源，用数据反馈闭环让系统越跑越准，用国家策略让同一热点服务不同文化背景的用户。
+**方案**：TrendForge 用 Multi-Agent Workflow 自动化内容生产全链路，用 RAG 保证事实可溯源，用数据反馈闭环让系统越跑越准，用国家策略让同一热点服务不同文化背景的用户。
 
 **核心能力**：
 - 🔍 **知识库**：10+ 可信媒体 RSS 自动采集，智能 Chunk，向量检索，每日增量
@@ -36,7 +36,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                      FluxPress API (FastAPI)                     │
+│                      TrendForge API (FastAPI)                     │
 │  /contents · /run-topic · /trace · /events/simulate · /analytics │
 └──────────────┬──────────────────────────────┬───────────────────┘
                │                              │
@@ -261,7 +261,7 @@ python main.py simulate
 
 ```
 ai-news-system/
-├── src/trendforge/          # 生产代码
+├── src/trendforge/          # 生产代码（MVP 实现）
 │   ├── agents/              # 8 个 Agent + base(RunContext/决策日志)
 │   ├── workflow/            # 8 步编排器 + 状态机
 │   ├── rag/                 # 采集/Chunk/向量/检索/调度
@@ -272,7 +272,12 @@ ai-news-system/
 │   ├── config.py            # 国家策略 + 分发平台 + RSS 源
 │   └── models.py            # 10+ 表（含 decision_log/全球化字段）
 ├── build/                   # 公网静态门户 + API 控制台
-├── docs/                    # 设计文档
+├── enterprise-spec/         # 企业级设计参考（TrendForge 团队规格，纯参考/愿景，非 MVP 范围）
+│   ├── docs/                # 12 篇设计稿（PRD/Agent/RAG/Workflow/合规…）
+│   ├── architecture/        # 系统架构图
+│   ├── dashboard/           # 数据看板原型
+│   ├── ui/                  # 控制台/管道规格/设计系统
+│   └── demo/                # TrendForge 可运行 Demo
 └── README.md
 ```
 
@@ -292,11 +297,14 @@ ai-news-system/
 
 ## 十六、求职定位
 
-这是一个 **AI 产品经理作品集**项目，展示如何把传统内容生产流程抽象为 AI 可持续执行的系统：
-- 业务闭环设计（不止技术 Demo）
-- Multi-Agent 协作与可解释性
-- Prompt 生命周期与实验
-- 数据驱动的全球化内容策略
-- SQL 数据分析能力
+这是一个面向 **AI 产品经理 / AI 应用工程师** 求职的**个人作品集**项目（MVP），展示如何把传统内容生产流程抽象为 AI 可持续执行、持续优化的系统：
 
-> 内部代码包名 `trendforge`，对外产品名 **FluxPress**。
+- **业务闭环设计**（不是技术 Demo）：热点→成稿→核查→审核→分发→用户行为回流→Prompt 效果
+- **Multi-Agent 协作 + 可解释性**（决策日志 `_decision`）
+- **Prompt 生命周期与 A/B 实验**（版本快照 + Z 检验 + 效果回流）
+- **数据驱动的全球化内容策略**（7 国风格/平台/调性）
+- **SQL 数据分析能力**（漏斗/CTR/完读/ROI 按国家拆分）
+
+**仓库结构说明（给面试官/协作者）**：根目录即**可运行的个人 MVP**（包名 `trendforge`，对外统一名 **TrendForge**）；`enterprise-spec/` 是同一产品的**企业级设计参考**（团队规格、集群/多租户/合规引擎等更激进形态），仅作架构深度展示，**不在个人 MVP 交付范围内**，请勿照其过度实现。
+
+**MVP 边界（建议面试强调）**：单进程可跑（SQLite + Chroma + FastAPI + 多厂商 LLM），优先把"能跑通的闭环"和"真实前端控制台"讲清楚；企业级扩展（向量集群、工作流引擎、多租户、全量合规）留作演进路线。
