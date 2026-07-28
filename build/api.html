@@ -148,7 +148,7 @@ footer{padding:40px 0;text-align:center;color:var(--t3);font-size:13px;border-to
     <div class="sec-head"><h2>🔗 连接真实后端</h2><p>填入你部署的后端地址（见下方部署指南），控制台将从"快照模式"切换为"实时模式"</p></div>
     <div class="connector">
       <div class="row">
-        <input id="apiUrl" placeholder="https://trendforge-api.onrender.com （留空 = 用内置快照数据）">
+        <input id="apiUrl" placeholder="https://trendforge-api-h7n6.onrender.com （留空 = 用内置快照数据）">
         <button class="btn btn-primary" onclick="connectBackend()">连接</button>
         <button class="btn btn-ghost" onclick="testHealth()">测试健康检查</button>
         <button class="btn btn-ghost" onclick="disconnect()">断开</button>
@@ -199,7 +199,7 @@ footer{padding:40px 0;text-align:center;color:var(--t3);font-size:13px;border-to
       <div class="deploy-card">
         <h4>方案 A · Render <span class="tag">推荐</span></h4>
         <p>推送代码到 GitHub → Render 新建 Blueprint（自动识别 render.yaml）→ 填 LLM key → 2 分钟拿到公网地址。</p>
-        <pre>得到：https://trendforge-api.onrender.com/docs</pre>
+        <pre>得到：https://trendforge-api-h7n6.onrender.com/docs</pre>
       </div>
       <div class="deploy-card">
         <h4>方案 B · Fly.io</h4>
