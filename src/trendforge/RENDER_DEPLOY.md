@@ -80,7 +80,7 @@ open https://trendforge-api.onrender.com/docs
 
 ## 接入前端门户
 
-部署拿到地址后，在 `build/api.html` 的"连接后端"输入框填入该地址，门户的检索/生成按钮即调用真实服务。
+部署拿到地址后，运营控制台 `console/` 会**自动连接**真实后端（失败回退 DEMO 数据）；也可直接打开后端自带的 Swagger 文档 `https://<后端地址>/docs` 试用全部接口。原 `build/api.html` 静态控制台已废弃删除。
 
 ## 升级到生产（可选）
 
