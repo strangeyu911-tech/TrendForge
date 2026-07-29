@@ -18,7 +18,7 @@
 
 ### 2. 填入 LLM Key
 - 在环境变量中找到 `TF_GLM_API_KEY`，填入你的智谱 key
-- 其余变量（`TF_LLM_VENDOR=glm`、`TF_LLM_MODEL=glm-5.2`）已由 render.yaml 预填
+- 其余变量（`TF_LLM_VENDOR=glm`、`TF_LLM_MODEL=glm-4.7-flash`，免费模型）已由 render.yaml 预填
 
 ### 3. 等待构建（首次约 3-5 分钟）
 - Render 拉 Docker 镜像 → 装依赖 → 预下载 embedding 模型 → 打包数据

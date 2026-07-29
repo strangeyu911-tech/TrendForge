@@ -12,7 +12,7 @@ VENDOR_DEFAULTS: dict[str, dict] = {
     "deepseek":  {"kind": "openai",    "base_url": "https://api.deepseek.com/v1",                       "default_model": "deepseek-chat",             "label": "DeepSeek 深度求索"},
     "kimi":      {"kind": "openai",    "base_url": "https://api.moonshot.cn/v1",                        "default_model": "moonshot-v1-8k",            "label": "Kimi 月之暗面"},
     "qwen":      {"kind": "openai",    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1", "default_model": "qwen-plus",                 "label": "Qwen 通义千问"},
-    "glm":       {"kind": "openai",    "base_url": "https://open.bigmodel.cn/api/paas/v4",              "default_model": "glm-4-flash",               "label": "GLM 智谱清言"},
+    "glm":       {"kind": "openai",    "base_url": "https://open.bigmodel.cn/api/paas/v4",              "default_model": "glm-4.7-flash",             "label": "GLM 智谱清言"},
 }
 
 # ============ 可信新闻源 RSS 注册表 ============

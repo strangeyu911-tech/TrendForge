@@ -255,7 +255,7 @@ Reviewer reject 时自动写 `bad_cases`（含 affected_prompt_versions），Pub
 # 1. 配置 LLM（src/trendforge/.env）
 TF_LLM_VENDOR=glm
 TF_GLM_API_KEY=<your key>
-TF_LLM_MODEL=glm-5.2
+TF_LLM_MODEL=glm-4.7-flash
 
 # 2. 初始化（建库 + 默认 Prompt + RSS 采集 ~300 篇）
 python main.py seed

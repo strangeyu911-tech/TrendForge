@@ -22,7 +22,7 @@ services:
       - key: TF_LLM_VENDOR
         value: glm
       - key: TF_LLM_MODEL
-        value: glm-5.2
+        value: glm-4.7-flash
       # 真实 key 在 Render 控制台填入（sync: false 不回写仓库，安全）
       - key: TF_GLM_API_KEY
         sync: false

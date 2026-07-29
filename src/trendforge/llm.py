@@ -46,7 +46,7 @@ MODEL_PRICING: dict[str, tuple[float, float]] = {
     # Qwen (DashScope)
     "qwen-plus": (0.8, 2.0), "qwen-turbo": (2.0, 6.0), "qwen-max": (20.0, 60.0),
     # GLM (智谱)
-    "glm-4-flash": (0.1, 0.1), "glm-4": (50.0, 50.0), "glm-4-air": (1.0, 1.0), "glm-4-plus": (50.0, 50.0),
+    "glm-4.7-flash": (0.0, 0.0), "glm-4-flash": (0.1, 0.1), "glm-4": (50.0, 50.0), "glm-4-air": (1.0, 1.0), "glm-4-plus": (50.0, 50.0),
     "default": (2.0, 8.0),
 }
 
