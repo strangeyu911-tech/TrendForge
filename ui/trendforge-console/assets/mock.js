@@ -65,7 +65,9 @@ const MOCK = {
 
   /* ---------- PIPELINE (完整流水线：趋势探测 → 选题 → 生产，离线回退) ---------- */
   pipeline: {
-    country: "US",
+    country: "CN",
+    variants_per_topic: 1,
+    dedup: { published_count: 5, candidate_count: 3, filtered_repeats: 0, kept: 3 },
     trends: [
       { title: "OpenAI 发布 GPT-6，万亿参数多模态", heat: 98 },
       { title: "美联储意外降息 50 个基点", heat: 91 },
@@ -86,7 +88,7 @@ const MOCK = {
     ],
     decision_log: {
       trend_detector: "从知识库近 7 天 60 篇新闻中识别出 6 个上升热点，按热度排序。",
-      topic_selector: "结合 US 国家策略选出 3 个高价值话题，优先 tech 深度解读，规避低置信源。",
+      topic_selector: "结合 CN 国家策略选出 3 个高价值话题，优先 tech 深度解读；已对 5 篇已发布内容做去重规避。",
     },
   },
 

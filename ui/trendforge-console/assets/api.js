@@ -451,6 +451,7 @@ window.VM = (function () {
           categories: req.categories || ["tech", "finance", "world"],
           max_topics: req.max_topics || 3,
           country: req.country || "CN",
+          variants_per_topic: req.variants_per_topic || 1,
         }),
       });
       if (!res.ok) throw new Error("HTTP " + res.status);

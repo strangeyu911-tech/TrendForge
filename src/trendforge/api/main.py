@@ -99,7 +99,8 @@ async def run_topic(req: RunTopicRequest, session: AsyncSession = Depends(get_db
 @app.post("/api/content/run-pipeline")
 async def run_pipeline(req: RunPipelineRequest, session: AsyncSession = Depends(get_db)):
     """完整流水线：信号 → 选题 → 生产"""
-    strategy = {"categories": req.categories, "country": req.country, "max_topics": req.max_topics}
+    strategy = {"categories": req.categories, "country": req.country, "max_topics": req.max_topics,
+                 "variants_per_topic": max(1, int(req.variants_per_topic))}
     orch = WorkflowOrchestrator()
     result = await orch.run_pipeline(session, req.signals, strategy)
     await session.commit()

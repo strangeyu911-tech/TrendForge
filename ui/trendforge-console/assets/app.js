@@ -137,8 +137,13 @@ function renderPipelineResult(r) {
         </div>`).join("")}</div>`
     : `<div class="hint">本批无成功产出的内容（可在任务列表查看状态）</div>`;
 
+  const dedup = r.dedup;
+  const dedupHtml = dedup
+    ? `<div class="pl-meta">${dedup.published_count ? `已发布 ${dedup.published_count} 篇 · 本批规避重复选题 <b>${dedup.filtered_repeats}</b> 个` : "暂无已发布内容，无需去重"}${r.variants_per_topic > 1 ? ` · 每话题 <b>${r.variants_per_topic}</b> 视角裂变` : ""}</div>`
+    : "";
   return `
     <div class="pl-out">
+      ${dedupHtml}
       <div class="pl-step">
         <div class="pl-step__h"><span class="badge badge--ok"><span class="b-dot"></span>① 趋势探测</span> 发现 ${trendCount} 个热点</div>
         ${trendsHtml}
@@ -265,6 +270,12 @@ R.production = async (d) => {
         <textarea class="textarea" id="sigInput" placeholder="OpenAI 发布 GPT-6，万亿参数多模态&#10;美联储意外降息 50 个基点&#10;欧盟 AI 法案实施细则落地"></textarea>
         <label class="field__label" style="margin-top:var(--s3)">目标语言</label>
         <select class="select" id="countrySel" style="max-width:200px"><option value="CN" selected>中文</option><option value="US">英文</option></select>
+        <label class="field__label" style="margin-top:var(--s3)">每话题变体数（多视角裂变）</label>
+        <select class="select" id="variantsSel" style="max-width:200px">
+          <option value="1" selected>1 · 单篇</option>
+          <option value="2">2 · 双视角</option>
+          <option value="3">3 · 三视角</option>
+        </select>
         <div class="pl-actions">
           <button class="btn btn--primary" id="runPipelineBtn" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" stroke-linejoin="round"/></svg>
@@ -760,7 +771,9 @@ document.addEventListener("click", e => {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner" style="width:14px;height:14px"></span> 运行中…';
   if (box) box.innerHTML = '<div class="hint">正在探测趋势并执行流水线…</div>';
-  VM.runPipeline({ signals, categories: ["tech", "finance", "world"], max_topics: 3, country: ($("#countrySel") ? $("#countrySel").value : "CN") })
+  VM.runPipeline({ signals, categories: ["tech", "finance", "world"], max_topics: 3,
+    country: ($("#countrySel") ? $("#countrySel").value : "CN"),
+    variants_per_topic: ($("#variantsSel") ? parseInt($("#variantsSel").value, 10) || 1 : 1) })
     .then(r => {
       if (r && r.simulated) toast("离线模式：已模拟完整流水线（接入后端后真实自动探测）");
       else toast("完整流水线已执行 · 发现 " + (r.trends_count || 0) + " 趋势 / " + (r.topics_count || 0) + " 选题");

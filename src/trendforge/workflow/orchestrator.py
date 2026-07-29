@@ -27,6 +27,14 @@ from agents import (
 )
 from config import settings
 
+# 内容形态 → 中文标签（P2 多视角变体标题后缀）
+_STYLE_LABEL: dict[str, str] = {
+    "breaking_news": "快讯", "deep_dive": "深度解读", "analysis": "行业分析",
+    "brief": "简报", "summary": "要点梳理", "trending": "热点追踪",
+    "startup": "创业视角", "tech_explainer": "技术科普", "industry_analysis": "产业洞察",
+    "commentary": "评论", "news_card": "资讯卡",
+}
+
 
 class WorkflowOrchestrator:
     """端到端编排：8 步 Agent 链 + 回退 + 决策日志 + 实验分桶"""
@@ -167,6 +175,9 @@ class WorkflowOrchestrator:
     ) -> dict:
         """完整流水线：1.TrendDetector → 2.TopicSelector → 逐话题 3-8 步生产"""
         country = strategy.get("country", "CN")
+        variants_per_topic = max(1, int(strategy.get("variants_per_topic", 1)))
+        # P0: 查询已发布标题，供选题器去重（避免重复生产）
+        published_titles = await self._published_titles(session)
         # 1. TrendDetector
         td_ctx = make_run_context(
             f"task_td_{uuid.uuid4().hex[:8]}", f"trace_{uuid.uuid4().hex[:12]}",
@@ -176,17 +187,53 @@ class WorkflowOrchestrator:
         td_out = await self.trend_detector._exec(td_ctx, {
             "signals": signals, "country": country, "category": strategy.get("category")})
         trends = td_out.get("trends", [])
-        # 2. TopicSelector
+        # 2. TopicSelector（传入已发布标题做去重）
         ts_out = await self.topic_selector._exec(td_ctx, {
-            "trends": trends, "country": country, "max_topics": strategy.get("max_topics", 5)})
+            "trends": trends, "country": country, "max_topics": strategy.get("max_topics", 5),
+            "published_titles": published_titles})
         topics = ts_out.get("topics", [])
-        # 3-8. 逐话题生产（串行保证 session 安全）
+        dedup_stats = ts_out.get("_dedup")
+        # 3-8. 逐话题生产（含 P2 多视角变体；串行保证 session 安全）
         results = []
         for topic in topics[: strategy.get("max_topics", 5)]:
-            r = await self.run_topic(session, topic, signals)
-            results.append(r)
+            for vt in self._build_variants(topic, country, variants_per_topic):
+                r = await self.run_topic(session, vt, signals)
+                results.append(r)
         return {"country": country, "trends_count": len(trends), "topics_count": len(topics),
+                "variants_per_topic": variants_per_topic, "dedup": dedup_stats,
                 "results": results, "decision_log": td_ctx.decision_log}
+
+    @staticmethod
+    async def _published_titles(session: AsyncSession) -> list[str]:
+        """查已成功发布的内容标题（P0 选题去重用）"""
+        try:
+            stmt = select(Content.title).where(Content.status == "succeeded")
+            rows = (await session.execute(stmt)).scalars().all()
+            return [t for t in rows if t]
+        except Exception:
+            return []
+
+    @staticmethod
+    def _build_variants(topic: dict, country: str, n: int) -> list[dict]:
+        """P2: 同一话题按国家内容形态生成多视角变体（不同风格/角度，标题加风格后缀避免重复）"""
+        if n <= 1:
+            return [topic]
+        styles = COUNTRY_STRATEGIES.get(country, {}).get(
+            "content_styles", [topic.get("content_style", "deep_dive")])
+        angles = topic.get("suggested_angles") or []
+        jobs: list[dict] = []
+        for i in range(n):
+            vt = dict(topic)
+            style = styles[i % len(styles)]
+            vt["content_style"] = style
+            label = _STYLE_LABEL.get(style, style)
+            if i > 0:
+                vt["title"] = f"{topic.get('title', '')} · {label}"
+                vt["topic_id"] = f"{topic.get('topic_id', 'topic')}_v{i}"
+            if angles:
+                vt["suggested_angles"] = [angles[i % len(angles)]]
+            jobs.append(vt)
+        return jobs
 
     def _step(self, agent: str, out: dict, round_idx: int | None = None) -> dict:
         step = {"agent": agent, "output": {k: v for k, v in out.items() if k != "_llm_resp"}}

@@ -51,6 +51,21 @@ RSS_SOURCES: list[dict] = [
      "category": "tech", "country": "US", "language": "en", "credibility_level": 1, "source_type": "tech_media"},
     {"feed_url": "https://feeds.bloomberg.com/markets.rss", "source_name": "Bloomberg Markets",
      "category": "finance", "country": "US", "language": "en", "credibility_level": 1, "source_type": "official_media"},
+    # ---- 更多权威科技源（拓宽覆盖面）----
+    {"feed_url": "https://www.wired.com/feed/rss", "source_name": "Wired",
+     "category": "tech", "country": "US", "language": "en", "credibility_level": 2, "source_type": "tech_media"},
+    # ---- 国际新闻补充 ----
+    {"feed_url": "https://www.aljazeera.com/xml/rss/all.xml", "source_name": "Al Jazeera",
+     "category": "world", "country": "INTL", "language": "en", "credibility_level": 1, "source_type": "official_media"},
+    # ---- 中文科技/AI 源（支撑中文默认生产，避免全部依赖英文改写）----
+    {"feed_url": "https://36kr.com/feed", "source_name": "36氪",
+     "category": "tech", "country": "CN", "language": "zh", "credibility_level": 2, "source_type": "tech_media"},
+    {"feed_url": "https://www.qbitai.com/feed", "source_name": "量子位",
+     "category": "tech", "country": "CN", "language": "zh", "credibility_level": 2, "source_type": "tech_media"},
+    {"feed_url": "https://www.leiphone.com/rss.xml", "source_name": "雷锋网",
+     "category": "tech", "country": "CN", "language": "zh", "credibility_level": 2, "source_type": "tech_media"},
+    {"feed_url": "https://www.jiqizhixin.com/rss", "source_name": "机器之心",
+     "category": "tech", "country": "CN", "language": "zh", "credibility_level": 2, "source_type": "tech_media"},
 ]
 
 # ============ 全球化内容策略（按国家/地区）============
@@ -158,8 +173,8 @@ class Settings(BaseSettings):
     chunk_max_tokens: int = 600         # 硬上限
 
     # ---- News Collector ----
-    collector_initial_target: int = 300      # 首次初始化目标篇数
-    collector_per_feed_limit: int = 50       # 每个 feed 最多取多少条
+    collector_initial_target: int = 600      # 首次初始化目标篇数（P1：扩充精选知识库）
+    collector_per_feed_limit: int = 80       # 每个 feed 最多取多少条（P1：提高单源覆盖）
     collector_fetch_fulltext: bool = True    # RSS 只有摘要时是否抓全文
     collector_http_timeout: int = 20         # 抓取超时秒
     collector_daily_hour: int = 6            # 每日增量采集的小时（本地时区）

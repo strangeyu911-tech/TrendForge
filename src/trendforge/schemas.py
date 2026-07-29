@@ -115,6 +115,7 @@ class RunPipelineRequest(BaseModel):
     signals: list[Signal] = Field(default_factory=list)
     max_topics: int = 5
     categories: list[str] = Field(default_factory=lambda: ["tech", "finance"])
+    variants_per_topic: int = 1  # P2: 每个话题生成的多视角变体数（≥2 时按国家内容形态裂变）
     country: str = "CN"
 
 
