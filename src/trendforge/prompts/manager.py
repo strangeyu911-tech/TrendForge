@@ -6,6 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import Prompt
 from .renderer import render
 
+# 场景模板缺失时的回退顺序（保证多视角变体等不崩溃）
+_DEFAULT_SCENES = ("deep_dive", "default")
+
 
 class PromptManager:
     """Prompt 版本管理：不可变快照、生命周期、渲染"""
@@ -88,8 +91,15 @@ class PromptManager:
     async def render_production(
         self, session: AsyncSession, agent: str, scene: str, language: str, variables: dict,
     ) -> tuple[str, str]:
-        """渲染生产版本，返回 (渲染后文本, 版本号)"""
+        """渲染生产版本，返回 (渲染后文本, 版本号)。
+        指定场景模板缺失时回退到默认场景（deep_dive/default），避免多视角变体因缺模板崩溃。"""
         p = await self.get_production(session, agent, scene, language)
+        if p is None:
+            for fb in _DEFAULT_SCENES:
+                if fb != scene:
+                    p = await self.get_production(session, agent, fb, language)
+                    if p:
+                        break
         if p is None:
             raise ValueError(f"无生产版本: {agent}/{scene}/{language}")
         return render(p.template, variables), p.version
