@@ -144,7 +144,6 @@ window.VM = (function () {
 
   /* ================= PRODUCTION ================= */
   async function production() {
-    const stages = M.production.stages; // 流水线为固定设计产物，本地维护
     const tasks = await live(
       async () => {
         const rows = await get("/api/tasks?limit=20");
@@ -152,12 +151,59 @@ window.VM = (function () {
           id: t.task_id, topic: t.topic_title, cat: "—", pri: "—",
           status: t.status, dur: fmtDur(t.total_duration_ms),
           cost: fmtCost(t.total_cost_cny), rounds: t.review_rounds,
+          created_at: t.created_at,
         }));
       },
       () => M.production.tasks,
       "production.tasks"
     );
-    return { stages, tasks };
+
+    // 流水线拓扑固定，但状态随实时任务变化（不再永远停在 STEP 03）
+    const STAGE_ORDER = ["trend_detector", "planner", "researcher", "writer", "reviewer", "publisher"];
+    const stages = await live(
+      async () => {
+        const running = tasks.find(t => t.status === "running" || t.status === "degraded");
+        if (running) {
+          try {
+            const tr = await get(`/api/tasks/${running.id}/trace`);
+            const spans = tr.spans || [];
+            const activeIdx = STAGE_ORDER.findIndex(a => {
+              const sp = spans.find(s => s.agent === a);
+              return sp && sp.status !== "done" && sp.status !== "fail";
+            });
+            const cur = activeIdx >= 0 ? activeIdx : (spans.length ? spans.length - 1 : 0);
+            return M.production.stages.map((s, i) => ({
+              ...s, state: i < cur ? "done" : i === cur ? "active" : "pending",
+            }));
+          } catch (e) { /* trace 拉取失败则走下方通用逻辑 */ }
+        }
+        const latest = tasks[0];
+        if (latest && latest.status === "succeeded") {
+          return M.production.stages.map(s => ({ ...s, state: "done" }));
+        }
+        if (latest && latest.status === "failed") {
+          return M.production.stages.map((s, i) => ({ ...s, state: i === 4 ? "fail" : (i < 4 ? "done" : "pending") }));
+        }
+        return M.production.stages.map(s => ({ ...s, state: "pending" }));
+      },
+      () => M.production.stages,  // demo 模式保留原静态拓扑（STEP 03 active 作为演示）
+      "production.stages"
+    );
+
+    // 系统当前状态文案（区分“拓扑展示”与“历史任务列表”）
+    let pipelineNote = "空闲 · 当前没有运行中的任务";
+    const running = tasks.find(t => t.status === "running" || t.status === "degraded");
+    if (running) {
+      const cur = stages.find(s => s.state === "active");
+      pipelineNote = `运行中 · ${cur ? cur.name : "流水线"} 阶段（${running.id}）`;
+    } else if (tasks[0]) {
+      pipelineNote = `空闲 · 最近任务「${tasks[0].topic}」${tasks[0].status === "succeeded" ? "已完成" : tasks[0].status} · ${relTime(tasks[0].created_at)}`;
+    }
+    if (lastSource === "mock") {
+      pipelineNote = "演示数据 · 流水线编排为静态拓扑（切到实时查看真实运行状态）";
+    }
+
+    return { stages, tasks, pipelineNote };
   }
 
   /* ================= TRACE ================= */

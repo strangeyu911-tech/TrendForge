@@ -376,6 +376,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .stage__state { margin-top: var(--s3); }
 .stage.is-done { border-color: #9ec6a8; border-color: color-mix(in srgb, var(--green) 40%, var(--line)); }
 .stage.is-active { border-color: var(--ember); box-shadow: 0 0 0 3px var(--ember-soft); }
+.stage.is-fail { border-color: var(--red); box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 18%, transparent); }
 .stage.is-active::after {
   content: ""; position: absolute; inset: -1px; border-radius: var(--r-md); pointer-events: none;
   box-shadow: 0 0 22px -4px var(--ember); animation: pulse 1.8s var(--ease-out) infinite;

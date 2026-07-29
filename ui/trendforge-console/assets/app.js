@@ -227,13 +227,20 @@ R.overview = async (d) => {
 };
 
 R.production = async (d) => {
-  const stages = d.stages.map((s, i) => `
-    <div class="stage ${s.state === "done" ? "is-done" : ""} ${s.state === "active" ? "is-active" : ""}">
+  const stageState = (s) => s.state === "done" ? ["ok", "完成"]
+    : s.state === "active" ? ["run", "执行中"]
+    : s.state === "fail" ? ["bad", "失败"]
+    : ["muted", "等待"];
+  const stages = d.stages.map((s, i) => {
+    const [cls, txt] = stageState(s);
+    return `
+    <div class="stage ${s.state === "done" ? "is-done" : ""} ${s.state === "active" ? "is-active" : ""} ${s.state === "fail" ? "is-fail" : ""}">
       <div class="stage__idx">STEP ${s.idx}</div>
       <div class="stage__name">${s.name}</div>
       <div class="stage__role">${s.role}</div>
-      <div class="stage__state">${badge(s.state === "done" ? "ok" : s.state === "active" ? "run" : "muted", s.state === "done" ? "完成" : s.state === "active" ? "执行中" : "等待")}</div>
-    </div>${i < d.stages.length - 1 ? '<span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : ""}`).join("");
+      <div class="stage__state">${badge(cls, txt)}</div>
+    </div>${i < d.stages.length - 1 ? '<span class="arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>' : ""}`;
+  }).join("");
   const rows = d.tasks.map(t => `
     <tr>
       <td class="mono">${t.id}</td>
@@ -299,10 +306,10 @@ R.production = async (d) => {
       </div>
     </div>
 
-    <div class="section-title"><h3>流水线编排</h3><span class="hint">DAG · 状态机 · 回退</span></div>
+    <div class="section-title"><h3>流水线编排</h3><span class="hint">${d.pipelineNote || "DAG · 状态机 · 回退"}</span></div>
     <div class="pipeline">${stages}</div>
 
-    <div class="section-title"><h3>任务列表</h3><span class="hint">${d.tasks.length} 个进行中 / 历史 · 点击查看链路</span></div>
+    <div class="section-title"><h3>任务列表</h3><span class="hint">${d.tasks.length} 个任务（实时历史）· 点击查看链路</span></div>
     <div class="card"><div class="card__body" style="padding:0">
       <div class="table-wrap"><table class="tbl">
         <thead><tr><th>任务</th><th>话题</th><th>品类</th><th>优先级</th><th>状态</th><th>时延</th><th>成本</th><th>轮次</th><th></th></tr></thead>
