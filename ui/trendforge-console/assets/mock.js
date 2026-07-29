@@ -63,6 +63,33 @@ const MOCK = {
     ],
   },
 
+  /* ---------- PIPELINE (完整流水线：趋势探测 → 选题 → 生产，离线回退) ---------- */
+  pipeline: {
+    country: "US",
+    trends: [
+      { title: "OpenAI 发布 GPT-6，万亿参数多模态", heat: 98 },
+      { title: "美联储意外降息 50 个基点", heat: 91 },
+      { title: "欧盟 AI 法案实施细则落地", heat: 87 },
+      { title: "国产大模型推理成本一年降 80%", heat: 82 },
+      { title: "中东停火协议后的能源价格路径", heat: 76 },
+      { title: "量子纠错新突破，错误率再降一个数量级", heat: 71 },
+    ],
+    topics: [
+      { title: "OpenAI 发布 GPT-6，万亿参数多模态", category: "tech", priority: "P0", suggested_angles: ["技术解析", "行业影响"] },
+      { title: "美联储意外降息 50 个基点", category: "finance", priority: "P1", suggested_angles: ["市场传导", "资产配置"] },
+      { title: "欧盟 AI 法案实施细则落地", category: "tech", priority: "P1", suggested_angles: ["合规成本", "企业影响"] },
+    ],
+    results: [
+      { task_id: "T-7f3a", trace_id: "trace_7f3a", topic: { title: "OpenAI 发布 GPT-6，万亿参数多模态" }, status: "succeeded", final: { content_id: "C-9f21" } },
+      { task_id: "T-4a8c", trace_id: "trace_4a8c", topic: { title: "美联储意外降息 50 个基点" }, status: "succeeded", final: { content_id: "C-4a8c" } },
+      { task_id: "T-7b30", trace_id: "trace_7b30", topic: { title: "欧盟 AI 法案实施细则落地" }, status: "succeeded", final: { content_id: "C-7b30" } },
+    ],
+    decision_log: {
+      trend_detector: "从知识库近 7 天 60 篇新闻中识别出 6 个上升热点，按热度排序。",
+      topic_selector: "结合 US 国家策略选出 3 个高价值话题，优先 tech 深度解读，规避低置信源。",
+    },
+  },
+
   /* ---------- TRACE ---------- */
   trace: {
     tasks: [

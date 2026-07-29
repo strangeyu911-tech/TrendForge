@@ -137,7 +137,7 @@ class Settings(BaseSettings):
     writer_model: str = ""
     reviewer_model: str = ""
     publisher_model: str = ""
-    llm_timeout: int = 60
+    llm_timeout: int = 180
     llm_max_retries: int = 3
 
     # ---- Embedding（独立于对话厂商，保持向量维度稳定）----

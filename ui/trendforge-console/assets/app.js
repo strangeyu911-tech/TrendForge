@@ -104,6 +104,56 @@ function verdictBadge(v) {
   return { pass: ["ok", "pass"], revise: ["warn", "revise"], reject: ["bad", "reject"] }[v] ? badge(...{ pass: ["ok", "pass"], revise: ["warn", "revise"], reject: ["bad", "reject"] }[v]) : `<span class="chip">${v || "—"}</span>`;
 }
 
+/* ---- text escape (用户输入可能进入渲染) ---- */
+const tfEsc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ---- 渲染完整流水线结果（趋势探测 → 选题 → 逐话题生产）---- */
+function renderPipelineResult(r) {
+  if (!r) return "";
+  const trendCount = r.trends_count != null ? r.trends_count : (r.trends ? r.trends.length : 0);
+  const trendsHtml = (r.trends && r.trends.length)
+    ? `<div class="trend-list">${r.trends.map(t => `<span class="chip">${tfEsc(t.title)}${t.heat ? ` <b>${t.heat}</b>` : ""}</span>`).join("")}</div>`
+    : `<div class="hint">从知识库自动探测到 <b>${trendCount}</b> 个趋势</div>`;
+
+  const topicSrc = (r.topics && r.topics.length) ? r.topics
+    : (r.results || []).map(x => x.topic).filter(Boolean);
+  const topicCount = r.topics_count != null ? r.topics_count : topicSrc.length;
+  const topicsHtml = topicSrc.length
+    ? `<div class="topic-cards">${topicSrc.slice(0, r.max_topics || 5).map(t => `
+        <div class="topic-card">
+          <div class="topic-card__t">${tfEsc(t.title || "")}</div>
+          <div class="topic-card__m">${catTag(t.category || "")} ${tfEsc(t.priority || "")} · ${(t.suggested_angles || []).join(" / ")}</div>
+        </div>`).join("")}</div>`
+    : `<div class="hint">未选出话题</div>`;
+
+  const produced = (r.results || []).filter(x => x.status === "succeeded" && x.final && x.final.content_id);
+  const producedHtml = produced.length
+    ? `<div class="prod-list">${produced.map(x => `
+        <div class="prod-item" role="button" tabindex="0" onclick="goContent('${x.final.content_id}')" onkeydown="if(event.key==='Enter')goContent('${x.final.content_id}')">
+          <span class="badge badge--ok"><span class="b-dot"></span>${tfEsc(x.status)}</span>
+          <span class="prod-item__t">${tfEsc((x.topic && x.topic.title) || "")}</span>
+          <span class="prod-item__id mono">${tfEsc(x.final.content_id)}</span>
+          <span class="row-action">查看内容 →</span>
+        </div>`).join("")}</div>`
+    : `<div class="hint">本批无成功产出的内容（可在任务列表查看状态）</div>`;
+
+  return `
+    <div class="pl-out">
+      <div class="pl-step">
+        <div class="pl-step__h"><span class="badge badge--ok"><span class="b-dot"></span>① 趋势探测</span> 发现 ${trendCount} 个热点</div>
+        ${trendsHtml}
+      </div>
+      <div class="pl-step">
+        <div class="pl-step__h"><span class="badge badge--ok"><span class="b-dot"></span>② 自动选题</span> 选定 ${topicCount} 个话题</div>
+        ${topicsHtml}
+      </div>
+      <div class="pl-step">
+        <div class="pl-step__h"><span class="badge badge--ok"><span class="b-dot"></span>③ 逐话题生产</span> 检索 → 写作 → 审核 → 发布</div>
+        ${producedHtml}
+      </div>
+    </div>`;
+}
+
 /* =====================================================================
    VIEW LOADERS (VM)
    ===================================================================== */
@@ -198,9 +248,27 @@ R.production = async (d) => {
     </tr>`).join("");
   return `
     <div class="page-head">
-      <div><h2>发起新话题生产</h2><p>填写话题后触发端到端流水线：选题 → 检索 → 写作 → 审核 → 发布。</p></div>
+      <div><h2>内容生产</h2><p>两种方式：① 运行完整流水线（系统自动探测热点并选题）；② 手动指定单个话题生产。</p></div>
     </div>
+
+    <div class="card card--pipeline">
+      <div class="card__head"><h3>运行完整流水线</h3><span class="sub">自动趋势探测 → 选题 → 检索 → 写作 → 审核 → 发布</span></div>
+      <div class="card__body">
+        <label class="field__label">趋势信号（可选，每行一条；留空则由系统从知识库自动探测热点）</label>
+        <textarea class="textarea" id="sigInput" placeholder="OpenAI 发布 GPT-6，万亿参数多模态&#10;美联储意外降息 50 个基点&#10;欧盟 AI 法案实施细则落地"></textarea>
+        <div class="pl-actions">
+          <button class="btn btn--primary" id="runPipelineBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" stroke-linejoin="round"/></svg>
+            运行完整流水线
+          </button>
+          <span class="hint">将依次执行 8 步 Agent 链路，耗时视话题数而定</span>
+        </div>
+        <div id="pipelineResult"></div>
+      </div>
+    </div>
+
     <div class="card">
+      <div class="card__head"><h3>或：手动指定单个话题</h3><span class="sub">由你给定话题，系统完成检索→写作→审核→发布</span></div>
       <div class="card__body">
         <form id="topicForm" class="field-row">
           <div class="field" style="grid-column:1/3">
@@ -457,9 +525,15 @@ R.contents = async (d) => {
 R.content = async (d, id) => {
   const c = d; // content VM (detail + trace)
   const bodyHtml = (c.body && c.body.length)
-    ? c.body.map(b => b.type === "heading"
-        ? `<h2 class="article__h">${esc(b.text)}</h2>`
-        : `<p class="article__p">${esc(b.text)}${(b.citations || []).map(ct => `<sup class="cite">${ct}</sup>`).join("")}</p>`).join("")
+    ? c.body.map(b => {
+        if (b.type === "heading") return `<h2 class="article__h">${esc(b.text)}</h2>`;
+        // 把正文里的 [ev_xxx] 渲染为上标引用，避免与 citations 数组重复渲染造成乱码
+        const inline = (b.text || "").match(/\[ev_[a-zA-Z0-9_]+\]/g) || [];
+        const rendered = esc(b.text || "").replace(/\[ev_([a-zA-Z0-9_]+)\]/g, '<sup class="cite">ev_$1</sup>');
+        // 仅追加数组里、正文中未内联出现的引用（去重）
+        const extra = (b.citations || []).filter(ct => ct && !inline.includes("[" + ct + "]") && !inline.includes(ct));
+        return `<p class="article__p">${rendered}${extra.map(ct => `<sup class="cite">${esc(ct)}</sup>`).join("")}</p>`;
+      }).join("")
     : `<p class="article__p">（暂无正文）</p>`;
 
   const tags = (c.tags || []).map(t => `<span class="chip">#${esc(t)}</span>`).join("");
@@ -647,6 +721,28 @@ document.addEventListener("submit", e => {
       btn.disabled = false; btn.innerHTML = orig; form.reset();
     });
   }
+});
+
+/* ---- full pipeline run (趋势探测→选题→生产) ---- */
+document.addEventListener("click", e => {
+  if (!e.target.closest("#runPipelineBtn")) return;
+  const btn = e.target.closest("#runPipelineBtn");
+  const input = $("#sigInput");
+  const lines = (input && input.value ? input.value : "").split("\n").map(s => s.trim()).filter(Boolean);
+  const signals = lines.length ? [{ source: "console", items: lines.map(t => ({ title: t, heat: 0 })) }] : [];
+  const box = $("#pipelineResult");
+  const orig = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px"></span> 运行中…';
+  if (box) box.innerHTML = '<div class="hint">正在探测趋势并执行流水线…</div>';
+  VM.runPipeline({ signals, categories: ["tech", "finance", "world"], max_topics: 3 })
+    .then(r => {
+      if (r && r.simulated) toast("离线模式：已模拟完整流水线（接入后端后真实自动探测）");
+      else toast("完整流水线已执行 · 发现 " + (r.trends_count || 0) + " 趋势 / " + (r.topics_count || 0) + " 选题");
+      if (box) box.innerHTML = renderPipelineResult(r);
+    })
+    .catch(err => { toast("运行失败：" + (err && err.message ? err.message : err)); if (box) box.innerHTML = ""; })
+    .finally(() => { btn.disabled = false; btn.innerHTML = orig; });
 });
 
 /* ---- bad case badge count (mock-only metric) ---- */

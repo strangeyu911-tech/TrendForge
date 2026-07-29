@@ -15,7 +15,7 @@ class WriterAgent(BaseAgent):
         content_style = inputs.get("content_style", ctx.content_style)
         template_type = inputs.get("template", content_style)
         constraints = inputs.get("constraints", {
-            "min_words": 400, "max_words": 1200,
+            "min_words": 900, "max_words": 2200,
             "must_cite_all_evidences": True, "tone": "objective",
             "content_style": content_style, "country": ctx.country,
             "target_audience": ctx.target_audience,
@@ -29,7 +29,7 @@ class WriterAgent(BaseAgent):
         )
         ctx.prompt_versions["writer"] = version
         # 调 LLM
-        resp = await ctx.llm.chat(rendered, model=settings.writer_model, json_mode=True, temperature=0.7)
+        resp = await ctx.llm.chat(rendered, model=settings.writer_model, json_mode=True, temperature=0.7, max_tokens=3000)
         article = self._build(resp.text, topic, evidences, ctx.language)
         citations = self._validate_citations(article, evidences)
         wc = article.get("word_count", 0)

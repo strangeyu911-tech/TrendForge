@@ -20,6 +20,8 @@
      GET /api/rag/search
      GET /api/contents
      GET /api/content/{id}
+     POST /api/content/run-topic      单话题端到端生产（需 LLM）
+     POST /api/content/run-pipeline   完整流水线：趋势探测→选题→生产（需 LLM）
      GET /api/tasks
      GET /api/tasks/{id}/trace
      GET /api/contents/{id}/trace
@@ -389,11 +391,52 @@ window.VM = (function () {
              message: "已模拟提交（离线模式）" };
   }
 
+  /* ================= RUN PIPELINE (完整流水线：趋势探测→选题→生产) ================= */
+  async function runPipeline(req) {
+    if (forced === "mock") return mockRunPipeline(req);
+    try {
+      const url = API_BASE.replace(/\/$/, "") + "/api/content/run-pipeline";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          signals: req.signals || [],
+          categories: req.categories || ["tech", "finance", "world"],
+          max_topics: req.max_topics || 3,
+        }),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      lastSource = "live";
+      const r = await res.json();
+      return { ...r, simulated: false };
+    } catch (e) {
+      lastSource = "mock";
+      console.warn("[VM] runPipeline live failed, simulated:", e.message);
+      return mockRunPipeline(req);
+    }
+  }
+  function mockRunPipeline(req) {
+    const base = M.pipeline;
+    const userItems = (req && req.signals && req.signals[0] && req.signals[0].items) || [];
+    const trends = userItems.length
+      ? userItems.map(s => ({ title: s.title, heat: s.heat || 80 }))
+      : base.trends;
+    return {
+      country: base.country,
+      trends_count: trends.length,
+      topics_count: base.topics.length,
+      trends, topics: base.topics, results: base.results,
+      decision_log: base.decision_log,
+      simulated: true,
+      message: "已模拟运行完整流水线（离线模式）",
+    };
+  }
+
   return {
     get API_BASE() { return API_BASE; },
     setMode(m) { forced = m; },
     get mode() { return forced || "auto"; },
     get lastSource() { return lastSource; },
-    overview, production, trace, rag, prompts, analytics, badcases, contentsList, content, runTopic,
+    overview, production, trace, rag, prompts, analytics, badcases, contentsList, content, runTopic, runPipeline,
   };
 })();

@@ -135,7 +135,8 @@ DEFAULT_TEMPLATES = {
         "template": """你是资深{{ topic.category }}领域新闻编辑，为【{{ country }}】的{{ constraints.target_audience | default("读者") }}撰稿。
 
 # 任务
-基于证据与大纲，撰写一篇 {{ content_style | default(template_type) }} 稿件，调性：{{ constraints.tone | default("objective") }}。
+基于证据与大纲，撰写一篇有深度的 {{ content_style | default(template_type) }} 稿件，调性：{{ constraints.tone | default("objective") }}。
+不仅转述证据，还要给出分析、判断与影响解读。
 
 # 大纲（按此结构成文）
 {% for sec in outline %}
@@ -145,11 +146,17 @@ DEFAULT_TEMPLATES = {
 {% endfor %}
 
 # 约束
-- 字数 {{ constraints.min_words }}~{{ constraints.max_words }}
-- 必须引用证据 ID，格式 [ev_xxx]
+- 字数 {{ constraints.min_words }}~{{ constraints.max_words }} 字（中文按字符计）；严禁凑字数，但必须写透
+- 必须引用证据 ID，格式 [ev_xxx]；每个核心论断都要带引用
 - 禁止编造未在证据中出现的事实；所有数字必须带证据引用
 - 适配目标国家文化与表达习惯
 - 输出 JSON
+
+# 深度要求（重要）
+1. 严格按大纲分节，每节 2-4 段；每段先陈述事实（带引用），再展开分析。
+2. 分析维度至少覆盖：事件含义、对行业/用户的影响、潜在风险或争议、与其它趋势的关联。
+3. 避免堆砌罗列；要有编辑视角的判断与解读，体现"为什么这件事重要"。
+4. summary 风格可更紧凑，但仍需给出 1-2 句洞察；deep_dive 务必充分展开。
 
 # 证据
 {% for ev in evidences %}
