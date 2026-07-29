@@ -25,7 +25,7 @@ from agents import (
     TrendDetectorAgent, TopicSelectorAgent, ResearchAgent, OutlinePlannerAgent,
     WriterAgent, FactCheckerAgent, ReviewerAgent, PublisherAgent,
 )
-from config import settings
+from config import settings, COUNTRY_STRATEGIES
 
 # 内容形态 → 中文标签（P2 多视角变体标题后缀）
 _STYLE_LABEL: dict[str, str] = {
