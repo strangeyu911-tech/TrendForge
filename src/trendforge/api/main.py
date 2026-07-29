@@ -88,7 +88,7 @@ async def run_topic(req: RunTopicRequest, session: AsyncSession = Depends(get_db
         "title": req.title, "summary": req.summary, "category": req.category,
         "suggested_angles": req.angles or ["技术解析", "行业影响"],
         "target_languages": [req.language], "priority": req.priority,
-        "language": req.language,
+        "language": req.language, "country": req.country,
     }
     orch = WorkflowOrchestrator()
     result = await orch.run_topic(session, topic)
@@ -99,7 +99,7 @@ async def run_topic(req: RunTopicRequest, session: AsyncSession = Depends(get_db
 @app.post("/api/content/run-pipeline")
 async def run_pipeline(req: RunPipelineRequest, session: AsyncSession = Depends(get_db)):
     """完整流水线：信号 → 选题 → 生产"""
-    strategy = {"categories": req.categories, "languages": ["zh"], "max_topics": req.max_topics}
+    strategy = {"categories": req.categories, "country": req.country, "max_topics": req.max_topics}
     orch = WorkflowOrchestrator()
     result = await orch.run_pipeline(session, req.signals, strategy)
     await session.commit()

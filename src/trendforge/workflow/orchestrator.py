@@ -47,7 +47,7 @@ class WorkflowOrchestrator:
         """单话题端到端生产（8 步中的 3-8 步；1-2 步在 run_pipeline）。topic 含国家策略字段"""
         task_id = f"task_{uuid.uuid4().hex[:12]}"
         trace_id = f"trace_{uuid.uuid4().hex[:12]}"
-        country = topic.get("country", "US")
+        country = topic.get("country", "CN")
         language = topic.get("language", "zh")
         target_audience = topic.get("target_audience", "")
         content_style = topic.get("content_style", "deep_dive")
@@ -166,7 +166,7 @@ class WorkflowOrchestrator:
         self, session: AsyncSession, signals: list, strategy: dict,
     ) -> dict:
         """完整流水线：1.TrendDetector → 2.TopicSelector → 逐话题 3-8 步生产"""
-        country = strategy.get("country", "US")
+        country = strategy.get("country", "CN")
         # 1. TrendDetector
         td_ctx = make_run_context(
             f"task_td_{uuid.uuid4().hex[:8]}", f"trace_{uuid.uuid4().hex[:12]}",

@@ -418,7 +418,8 @@ window.VM = (function () {
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
           title: req.title, summary: req.summary || "", category: req.category || "tech",
-          language: req.language || "zh", priority: req.priority || "P1", angles: req.angles || [],
+          language: req.language || "zh", country: req.country || "CN",
+          priority: req.priority || "P1", angles: req.angles || [],
         }),
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
@@ -449,6 +450,7 @@ window.VM = (function () {
           signals: req.signals || [],
           categories: req.categories || ["tech", "finance", "world"],
           max_topics: req.max_topics || 3,
+          country: req.country || "CN",
         }),
       });
       if (!res.ok) throw new Error("HTTP " + res.status);

@@ -106,6 +106,7 @@ class RunTopicRequest(BaseModel):
     summary: str = ""
     category: str = "tech"
     language: str = "zh"
+    country: str = "CN"
     priority: str = "P1"
     angles: list[str] = Field(default_factory=list)
 
@@ -114,6 +115,7 @@ class RunPipelineRequest(BaseModel):
     signals: list[Signal] = Field(default_factory=list)
     max_topics: int = 5
     categories: list[str] = Field(default_factory=lambda: ["tech", "finance"])
+    country: str = "CN"
 
 
 class TaskResponse(BaseModel):

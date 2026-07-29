@@ -263,6 +263,8 @@ R.production = async (d) => {
       <div class="card__body">
         <label class="field__label">趋势信号（可选，每行一条；留空则由系统从知识库自动探测热点）</label>
         <textarea class="textarea" id="sigInput" placeholder="OpenAI 发布 GPT-6，万亿参数多模态&#10;美联储意外降息 50 个基点&#10;欧盟 AI 法案实施细则落地"></textarea>
+        <label class="field__label" style="margin-top:var(--s3)">目标语言</label>
+        <select class="select" id="countrySel" style="max-width:200px"><option value="CN" selected>中文</option><option value="US">英文</option></select>
         <div class="pl-actions">
           <button class="btn btn--primary" id="runPipelineBtn" type="button">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" stroke-linejoin="round"/></svg>
@@ -291,6 +293,9 @@ R.production = async (d) => {
           </div>
           <div class="field"><label>优先级</label>
             <select class="select" name="priority"><option>P0</option><option selected>P1</option><option>P2</option></select>
+          </div>
+          <div class="field"><label>目标语言</label>
+            <select class="select" name="country"><option value="CN" selected>中文</option><option value="US">英文</option></select>
           </div>
           <div class="field" style="grid-column:1/3"><label>切入角度（逗号分隔）</label>
             <input class="input" name="angles" placeholder="技术解析, 行业影响, 市场反应" />
@@ -531,15 +536,27 @@ R.contents = async (d) => {
 
 R.content = async (d, id) => {
   const c = d; // content VM (detail + trace)
+  // 收集全文所有 ev 引用，建立 ev_id -> 序号映射（去重保序），渲染为干净编号角标
+  const evMap = {};
+  let evSeq = 0;
+  (c.body || []).forEach(b => {
+    const ids = [...((b.text || "").match(/ev_[a-zA-Z0-9_]+/g) || []), ...(b.citations || [])]
+      .map(x => String(x).replace(/[\[\]]/g, ""));
+    ids.forEach(ev => { if (ev && !(ev in evMap)) evMap[ev] = ++evSeq; });
+  });
+  const normEv = (ev) => String(ev).replace(/[\[\]]/g, "");
+  const citeSup = (ev) => `<sup class="cite" title="证据 ${esc(ev)}">[${evMap[normEv(ev)] != null ? evMap[normEv(ev)] : "?"}]</sup>`;
   const bodyHtml = (c.body && c.body.length)
     ? c.body.map(b => {
         if (b.type === "heading") return `<h2 class="article__h">${esc(b.text)}</h2>`;
-        // 把正文里的 [ev_xxx] 渲染为上标引用，避免与 citations 数组重复渲染造成乱码
-        const inline = (b.text || "").match(/\[ev_[a-zA-Z0-9_]+\]/g) || [];
-        const rendered = esc(b.text || "").replace(/\[ev_([a-zA-Z0-9_]+)\]/g, '<sup class="cite">ev_$1</sup>');
-        // 仅追加数组里、正文中未内联出现的引用（去重）
-        const extra = (b.citations || []).filter(ct => ct && !inline.includes("[" + ct + "]") && !inline.includes(ct));
-        return `<p class="article__p">${rendered}${extra.map(ct => `<sup class="cite">${esc(ct)}</sup>`).join("")}</p>`;
+        // 正文内联的 [ev_xxx] / ev_xxx → 编号角标；未在正文内联的 citations → 段尾补上标
+        const rendered = esc(b.text || "").replace(/\[?ev_([a-zA-Z0-9_]+)\]?/g, (m, id) => {
+          const ev = "ev_" + id;
+          return ev in evMap ? citeSup(ev) : esc(m);
+        });
+        const inlineIds = (b.text || "").match(/ev_[a-zA-Z0-9_]+/g) || [];
+        const extra = (b.citations || []).filter(ct => ct && !inlineIds.includes(ct));
+        return `<p class="article__p">${rendered}${extra.map(citeSup).join("")}</p>`;
       }).join("")
     : `<p class="article__p">（暂无正文）</p>`;
 
@@ -709,6 +726,7 @@ document.addEventListener("submit", e => {
       category: data.get("category") || "tech",
       priority: data.get("priority") || "P1",
       language: "zh",
+      country: data.get("country") || "CN",
       angles: (data.get("angles") || "").toString().split(",").map(s => s.trim()).filter(Boolean),
     };
     if (!req.title) { toast("请先填写话题标题"); return; }
@@ -742,7 +760,7 @@ document.addEventListener("click", e => {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner" style="width:14px;height:14px"></span> 运行中…';
   if (box) box.innerHTML = '<div class="hint">正在探测趋势并执行流水线…</div>';
-  VM.runPipeline({ signals, categories: ["tech", "finance", "world"], max_topics: 3 })
+  VM.runPipeline({ signals, categories: ["tech", "finance", "world"], max_topics: 3, country: ($("#countrySel") ? $("#countrySel").value : "CN") })
     .then(r => {
       if (r && r.simulated) toast("离线模式：已模拟完整流水线（接入后端后真实自动探测）");
       else toast("完整流水线已执行 · 发现 " + (r.trends_count || 0) + " 趋势 / " + (r.topics_count || 0) + " 选题");
