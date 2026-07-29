@@ -182,6 +182,48 @@ DEFAULT_TEMPLATES = {
 {"article":{"title":"","summary":"","body":[{"type":"paragraph","text":"","citations":["ev_xxx"]}],"tags":[""],"word_count":0,"language":"{{ constraints.country | default("zh") }}"}}""",
         "variables": ["topic", "evidences", "constraints", "template_type", "outline", "content_style", "country"],
     },
+    "writer_industry_analysis": {
+        "agent": "writer", "scene": "industry_analysis", "language": "zh",
+        "template": """你是资深产业研究员，为【{{ country }}】的{{ constraints.target_audience | default("行业读者") }}撰稿，本篇采用"产业洞察"视角。
+
+# 任务
+基于证据与大纲，撰写一篇{{ content_style | default(template_type) }}稿件，调性：{{ constraints.tone | default("objective") }}。
+与"深度解读"不同——本篇重"产业/商业"维度：不止讲事件本身，更要拆解产业链、市场竞争、商业模式、投融资与公司动作，回答"这件事如何重塑行业格局"。
+
+# 大纲（按此结构成文）
+{% for sec in outline %}
+## {{ sec.section }}
+要点：{{ sec.points | join("、") }}
+引用证据：{{ sec.evidence_ids | join(", ") }}
+{% endfor %}
+
+# 约束
+- 字数 {{ constraints.min_words }}~{{ constraints.max_words }} 字（中文按字符计）；严禁凑字数，但必须写透
+- 必须引用证据 ID，格式 [ev_xxx]；每个核心论断都要带引用
+- 禁止编造未在证据中出现的事实；所有数字必须带证据引用
+- 适配目标国家文化与表达习惯
+- 输出 JSON
+
+# 产业洞察要求（重要）
+1. 严格按大纲分节，每节 2-4 段；每段先陈述事实（带引用），再从产业视角展开。
+2. 分析维度至少覆盖：① 产业链/供应链上下游影响；② 市场竞争格局与玩家动态；③ 商业模式/营收/投融资信号；④ 对从业者与投资决策的启示。
+3. 避免泛泛而谈；要有研究员视角的判断，体现"为什么这件事改变行业"。
+4. summary 给出 1-2 句产业级洞察。
+
+# 证据
+{% for ev in evidences %}
+[{{ ev.evidence_id }}] ({{ ev.source_name }}, {{ ev.published_at }}, 可信度{{ ev.credibility }})
+{{ ev.content }}
+{% endfor %}
+
+# 选题
+{{ topic.title }}
+角度建议：{{ topic.suggested_angles | join("、") }}
+
+# 输出 Schema
+{"article":{"title":"","summary":"","body":[{"type":"paragraph","text":"","citations":["ev_xxx"]}],"tags":[""],"word_count":0,"language":"{{ constraints.country | default("zh") }}"}}""",
+        "variables": ["topic", "evidences", "constraints", "template_type", "outline", "content_style", "country"],
+    },
     "reviewer_check": {
         "agent": "reviewer", "scene": "check", "language": "zh",
         "template": """你是严格的内容审核编辑。审核以下稿件。
