@@ -151,6 +151,7 @@ class Content(Base):
     """dwd_content_fact — 一行 = 一篇生产的内容"""
     __tablename__ = "contents"
     content_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    status: Mapped[str] = mapped_column(String(16), default="succeeded", index=True)  # succeeded|published|archived
     task_id: Mapped[str] = mapped_column(ForeignKey("tasks.task_id"), index=True)
     topic_id: Mapped[str] = mapped_column(String(64), index=True)
     title: Mapped[str] = mapped_column(String(512))

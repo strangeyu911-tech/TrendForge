@@ -72,6 +72,7 @@ _MIGRATE_COLUMNS = {
     ],
     # 平台化升级：全球化/分发/决策日志字段
     "contents": [
+        ("status", "VARCHAR(16) DEFAULT 'succeeded'"),
         ("country", "VARCHAR(8) DEFAULT 'US'"),
         ("target_audience", "VARCHAR(64) DEFAULT ''"),
         ("platform", "VARCHAR(32) DEFAULT ''"),

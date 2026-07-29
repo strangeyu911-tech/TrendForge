@@ -37,7 +37,7 @@ class PublisherAgent(BaseAgent):
 
         # 写 Content 表（含全球化字段 + outline + decision_log）
         content = Content(
-            content_id=content_id, task_id=ctx.task_id, topic_id=topic.get("topic_id", ""),
+            content_id=content_id, status="succeeded", task_id=ctx.task_id, topic_id=topic.get("topic_id", ""),
             title=article.get("title", ""), summary=article.get("summary", ""),
             body=article.get("body", []), tags=article.get("tags", []),
             category=topic.get("category", "tech"), language=ctx.language,
