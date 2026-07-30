@@ -559,6 +559,6 @@ window.VM = (function () {
     get mode() { return forced || "auto"; },
     get lastSource() { return lastSource; },
     overview, production, trace, rag, prompts, analytics, badcases, contentsList, content, runTopic, runPipeline, pollPipelineJob,
-    videoPlatforms, videoScript,
+    videoPlatforms, videoScript, videoscriptStudio,
   };
 })();
