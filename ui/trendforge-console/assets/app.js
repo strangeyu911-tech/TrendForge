@@ -176,6 +176,7 @@ const LOAD = {
   badcases:   () => VM.badcases(),
   contents:   () => VM.contentsList(),
   content:    (id) => VM.content(id),
+  videoscript: (id) => VM.videoscriptStudio(id),
 };
 
 /* =====================================================================
@@ -607,6 +608,12 @@ R.content = async (d, id) => {
       </div>
       <h1 class="reader__title">${esc(c.title)}</h1>
       ${c.summary ? `<p class="reader__lead">${esc(c.summary)}</p>` : ""}
+      <div style="margin:var(--s4) 0 0;display:flex;gap:var(--s3);flex-wrap:wrap">
+        <button class="btn btn--ghost" type="button" onclick="goView('videoscript','${c.content_id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z" stroke-linejoin="round"/></svg>
+          生成短视频脚本
+        </button>
+      </div>
       <div class="reader__facts">
         <span>平台 <b>${esc(c.trace ? (c.trace.country || "—") : "—")}</b></span>
         <span>发布 <b>${fmtDate(c.published_at)}</b></span>
@@ -644,6 +651,102 @@ R.content = async (d, id) => {
     <div class="card"><div class="card__body"><div class="log">${logHtml}</div></div></div>`;
 };
 
+R.videoscript = async (d, param) => {
+  const platforms = d.platforms || [];
+  const contents = d.contents || [];
+  const pre = param || d.preselectId || (contents[0] && contents[0].id) || "";
+  const contentOpts = contents.map(c =>
+    `<option value="${esc(c.id)}" ${c.id === pre ? "selected" : ""}>${esc(c.title)} · ${esc(c.country || "—")}/${esc(c.language || "—")}</option>`
+  ).join("");
+  const platformOpts = platforms.map(p =>
+    `<option value="${esc(p.key)}">${esc(p.label)} · ${p.duration}s · ${esc(p.aspect)}</option>`
+  ).join("");
+  return `
+    <div class="page-head"><div>
+      <h2>短视频脚本工作室</h2>
+      <p>把已发布的图文内容，一键适配为多平台短视频脚本（图文 → 短视频形态）。Agent 会结合平台预设（时长/钩子风格/受众）与全球化语境，产出钩子、分镜、口播、字幕、CTA 与话题标签。</p>
+    </div>
+      <span class="hint">对应岗位形态要求：图文 / 短视频 / 混剪 / 摘要 多形态供给</span>
+    </div>
+    <div class="card">
+      <div class="card__head"><h3>生成配置</h3><span class="sub">选择源内容 + 目标平台</span></div>
+      <div class="card__body">
+        <div class="field-row">
+          <div class="field" style="grid-column:1/2">
+            <label>源内容（来自内容库）</label>
+            <select class="select" id="vsContentSel">${contentOpts || '<option>无内容</option>'}</select>
+          </div>
+          <div class="field" style="grid-column:2/3">
+            <label>目标平台</label>
+            <select class="select" id="vsPlatformSel">${platformOpts}</select>
+          </div>
+        </div>
+        <div class="pl-actions">
+          <button class="btn btn--primary" id="vsGenBtn" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z" stroke-linejoin="round"/></svg>
+            生成短视频脚本
+          </button>
+          <label class="chk"><input type="checkbox" id="vsForceChk" /> 强制重新生成（跳过缓存）</label>
+          <span class="hint">同内容+平台命中缓存即秒开；免费模型排队时自动规则兜底</span>
+        </div>
+        <div id="vsResult" style="margin-top:var(--s5)"></div>
+      </div>
+    </div>`;
+};
+
+/* 渲染单篇短视频脚本（钩子/分镜时间线/字幕/CTA/标签） */
+function renderVideoScript(s) {
+  if (!s || !s.scenes) return `<div class="hint">暂无可展示的脚本</div>`;
+  const banner = s.cached
+    ? `<div class="pl-cache pl-cache--ok">⚡ 命中缓存，秒开（未重复消耗模型额度）</div>`
+    : (s.is_fallback ? `<div class="pl-cache pl-cache--warn">⚠ 免费模型暂不可用，已返回规则兜底脚本（建议恢复后强制重新生成）</div>` : "");
+  const hookBadge = { question: "疑问", conflict: "冲突", shock: "震惊", number: "数据", story: "故事" }[s.hook && s.hook.type] || s.hook && s.hook.type || "hook";
+  const scenes = (s.scenes || []).map(sc => `
+    <div class="vs-scene">
+      <div class="vs-scene__idx">${sc.idx}</div>
+      <div class="vs-scene__body">
+        <div class="vs-scene__row"><span class="chip chip--cat">画面</span><span>${esc(sc.visual || "")}</span></div>
+        <div class="vs-scene__row"><span class="chip chip--cat">口播</span><span>${esc(sc.narration || "")}</span></div>
+        <div class="vs-scene__row"><span class="chip chip--cat">字幕</span><span>${esc(sc.caption || "")}</span></div>
+        <div class="vs-scene__meta"><span>⏱ ${sc.duration_sec}s</span>${sc.bgm ? `<span>🎵 ${esc(sc.bgm)}</span>` : ""}</div>
+      </div>
+    </div>`).join("");
+  const tags = (s.hashtags || []).map(t => `<span class="chip">${esc(t)}</span>`).join("");
+  const total = (s.scenes || []).reduce((a, sc) => a + (sc.duration_sec || 0), 0);
+  return `
+    ${banner}
+    <div class="vs-head">
+      <div class="vs-title">${esc(s.title || "")}</div>
+      <div class="vs-meta">
+        <span class="chip">${esc(s.platform_label || s.platform)}</span>
+        <span class="chip">${s.duration_sec || total}s</span>
+        <span class="chip">${esc(s.aspect || "9:16")}</span>
+        ${s.prompt_version ? `<span class="chip">v ${esc(s.prompt_version)}</span>` : ""}
+      </div>
+    </div>
+    <div class="vs-hook">
+      <span class="badge badge--ember">${esc(hookBadge)}</span>
+      <span class="vs-hook__text">${esc((s.hook && s.hook.text) || "")}</span>
+    </div>
+    <div class="vs-cover"><span class="stat__label">封面文案</span><b>${esc(s.cover_text || "—")}</b></div>
+    <div class="section-title"><h3>分镜脚本</h3><span class="hint">${ (s.scenes || []).length } 个镜头 · 合计 ${total}s</span></div>
+    <div class="vs-scenes">${scenes}</div>
+    ${s.cta ? `<div class="vs-cta"><span class="stat__label">CTA</span><b>${esc(s.cta)}</b></div>` : ""}
+    ${tags ? `<div class="vs-tags"><span class="stat__label">话题标签</span><div>${tags}</div></div>` : ""}
+    ${s.tone ? `<div class="hint">语气：${esc(s.tone)}</div>` : ""}
+    ${s.notes ? `<div class="hint" style="margin-top:8px">📌 ${esc(s.notes)}</div>` : ""}
+    <div class="pl-actions" style="margin-top:var(--s4)">
+      <button class="btn btn--ghost" onclick="copyVideoScript()">复制脚本 JSON</button>
+    </div>`;
+}
+window.copyVideoScript = () => {
+  const el = document.getElementById("vsResult");
+  if (!el) return;
+  const data = window.__lastVideoScript;
+  const text = data ? JSON.stringify(data, null, 2) : el.innerText;
+  navigator.clipboard && navigator.clipboard.writeText(text).then(() => toast("已复制脚本到剪贴板"));
+};
+
 /* ---- security: escape user/content text ---- */
 function esc(s) {
   return String(s == null ? "" : s)
@@ -664,6 +767,7 @@ const TITLES = {
   prompts: ["Prompt 实验室", "版本生命周期 · A/B 实验 · 显著性检验"],
   analytics: ["数据分析", "漏斗 · 分品类 CTR · 成本与效率"],
   badcases: ["Bad Case 质控", "质量问题分诊 · 根因 · 修复追踪"],
+  videoscript: ["短视频脚本", "图文 → 多平台短视频形态 · 钩子/分镜/口播/字幕"],
 };
 
 let traceSel = null;
@@ -890,6 +994,34 @@ document.addEventListener("click", e => {
       }
     })
     .catch(err => { clearInterval(phaseTimer); toast("运行失败：" + (err && err.message ? err.message : err)); if (box) box.innerHTML = ""; finishRun(); });
+});
+
+/* ---- 短视频脚本生成（图文 → 多平台短视频形态） ---- */
+document.addEventListener("click", e => {
+  if (!e.target.closest("#vsGenBtn")) return;
+  const btn = e.target.closest("#vsGenBtn");
+  const contentSel = $("#vsContentSel");
+  const platformSel = $("#vsPlatformSel");
+  const force = !!(document.getElementById("vsForceChk") && document.getElementById("vsForceChk").checked);
+  const contentId = contentSel ? contentSel.value : "";
+  const platform = platformSel ? platformSel.value : "douyin";
+  const box = $("#vsResult");
+  if (!contentId) { toast("请先选择源内容"); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner" style="width:14px;height:14px"></span> 生成中…';
+  if (box) box.innerHTML = `<div class="hint">正在生成「${esc(platform)}」短视频脚本（免费模型排队请稍候）…</div>`;
+  VM.videoScript(contentId, platform, force).then(r => {
+    window.__lastVideoScript = r;
+    if (box) box.innerHTML = renderVideoScript(r);
+    if (r && r.cached) toast("命中缓存（秒开）");
+    else if (r && r.is_fallback) toast("免费模型限流，已返回规则兜底脚本");
+    else toast("短视频脚本已生成 · " + (r ? r.platform_label : ""));
+  }).catch(err => {
+    if (box) box.innerHTML = `<div class="empty-state"><h3>生成失败</h3><p>${esc(err && err.message ? err.message : err)}</p></div>`;
+    toast("生成失败：" + (err && err.message ? err.message : err));
+  }).finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z" stroke-linejoin="round"/></svg> 生成短视频脚本';
+  });
 });
 
 /* 刷新后恢复轮询：若上次运行尚未结束，自动继续（进度不丢失） */

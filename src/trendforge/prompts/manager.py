@@ -244,6 +244,48 @@ DEFAULT_TEMPLATES = {
 {"verdict":"pass","quality_scores":{"readability":4.0,"objectivity":4.0,"completeness":4.0,"timeliness":4.0,"overall":4.0},"fact_check":{"checked_claims":0,"consistent":0,"inconsistent":0,"details":[]},"compliance":{"sensitive_hits":[],"copyright_risk":"low","politics_risk":"none"},"revision_suggestions":[],"bad_case_flag":false}""",
         "variables": ["article", "evidences"],
     },
+    "video_script_planner_video_script": {
+        "agent": "video_script_planner", "scene": "video_script", "language": "zh",
+        "template": """你是短视频内容策划，负责把一篇已发布的图文新闻，改编为适合短视频平台的脚本。
+
+# 源内容（图文）
+标题：{{ title }}
+摘要：{{ summary }}
+正文要点：
+{{ body_text }}
+
+# 约束
+- 目标平台：{{ platform }}（{{ platform_preset | tojson }}）
+- 平台时长约 {{ (platform_preset | tojson | fromjson).duration }} 秒；钩子风格偏好「{{ (platform_preset | tojson | fromjson).hook_style }}」
+- 受众：{{ (platform_preset | tojson | fromjson).audience }}
+- 画幅：{{ (platform_preset | tojson | fromjson).aspect }}；语气：{{ (platform_preset | tojson | fromjson).tone }}
+- 全球化语境：{{ country_note }}
+- 输出语言：{{ language }}（与目标国家/平台受众一致；中文源内容在 TikTok 等海外平台仍应以英文口播为主，除非平台受众为中文）
+
+# 改编原则（重要）
+1. 忠于原文事实，不编造未在正文中出现的数字或事件；可提炼但不可夸大。
+2. 前 3 秒必须抓人：用冲突 / 反转 / 强疑问 / 反差数据做 hook，对应钩子风格。
+3. 节奏：每 6-10 秒一个信息点，画面随口播切换；分镜要可执行（给具体画面+字幕+口播）。
+4. 结尾给明确 CTA（关注 / 看主页 / 评论区讨论）与 3-5 个平台相关话题标签。
+5. 适配平台语气：抖音/快手口语强情绪；TikTok 英文快节奏；Reuters 中立权威先结论；Instagram 视觉优先；YouTube Shorts 干货向。
+
+# 输出 JSON（严格遵守）
+{"title":"视频标题（≤20字，抓人）",
+ "platform":"{{ platform }}",
+ "platform_label":"{{ (platform_preset | tojson | fromjson).label }}",
+ "duration_sec":{{ (platform_preset | tojson | fromjson).duration }},
+ "aspect":"{{ (platform_preset | tojson | fromjson).aspect }}",
+ "tone":"语气一句话",
+ "hook":{"text":"前3秒钩子文案","type":"question|conflict|shock|number|story"},
+ "cover_text":"封面大字文案（≤12字）",
+ "scenes":[{"idx":1,"visual":"画面描述（可执行）","narration":"口播/旁白文案","caption":"屏幕字幕","duration_sec":8,"bgm":"配乐/音效建议"},
+          {"idx":2,"visual":"...","narration":"...","caption":"...","duration_sec":10,"bgm":"..."}],
+ "cta":"行动号召文案",
+ "hashtags":["#话题1","#话题2","#话题3"],
+ "estimated_retention":0.6,
+ "notes":"制作要点 / 注意事项"}""",
+        "variables": ["title", "summary", "body_text", "platform", "platform_preset", "country_note", "language"],
+    },
 }
 
 

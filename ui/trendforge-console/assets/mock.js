@@ -212,6 +212,16 @@ const MOCK = {
     { content_id: "C-1c77", title: "某代币单周暴涨 300%，是机会还是陷阱", category: "finance", country: "CN", language: "zh", platform: "weibo", content_style: "breaking_news", quality_overall: 0.41, published_at: "2026-07-27T08:02:00", is_bad_case: true },
   ],
 
+  /* ---------- VIDEO PLATFORMS (短视频脚本平台预设，离线回退) ---------- */
+  videoPlatforms: [
+    { key: "douyin", label: "抖音", duration: 45, hook_style: "冲突/反转", audience: "泛娱乐大众", aspect: "9:16", tone: "口语化、强情绪、前 3 秒抛冲突" },
+    { key: "tiktok", label: "TikTok", duration: 30, hook_style: "curiosity/question", audience: "global Gen-Z", aspect: "9:16", tone: "casual, fast-paced, 英文口播" },
+    { key: "reuters", label: "Reuters Shorts", duration: 40, hook_style: "fact-led", audience: "news consumers", aspect: "9:16", tone: "neutral, authoritative, 先给结论" },
+    { key: "instagram", label: "Instagram Reels", duration: 30, hook_style: "aesthetic/relatable", audience: "lifestyle", aspect: "9:16", tone: "polished, 视觉优先" },
+    { key: "youtube_shorts", label: "YouTube Shorts", duration: 50, hook_style: "value/hook", audience: "how-to seekers", aspect: "9:16", tone: "informative, 干货向" },
+    { key: "kuaishou", label: "快手", duration: 35, hook_style: "接地气/故事", audience: "下沉市场大众", aspect: "9:16", tone: "亲切、口语、强共鸣" },
+  ],
+
   contentDetail(id) {
     const meta = (MOCK.contents.find(c => c.content_id === id)) || MOCK.contents[0];
     const bodies = {

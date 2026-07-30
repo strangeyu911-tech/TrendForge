@@ -111,6 +111,23 @@ DISTRIBUTION_PLATFORMS: dict[str, dict] = {
 # 内容形态候选（Publisher 推荐输出）
 CONTENT_FORMATS: list[str] = ["news_card", "article", "commentary", "summary", "short_video_script", "deep_analysis"]
 
+# ============ 短视频平台预设（VideoScriptPlanner 用）============
+# 不同平台的时长 / 钩子风格 / 受众 / 画幅 / 语气 差异，驱动 Agent 产出贴合平台的脚本。
+VIDEO_PLATFORMS: dict[str, dict] = {
+    "douyin":        {"label": "抖音",        "duration": 45, "hook_style": "冲突/反转",
+                      "audience": "泛娱乐大众", "aspect": "9:16", "tone": "口语化、强情绪、前 3 秒抛冲突"},
+    "tiktok":        {"label": "TikTok",      "duration": 30, "hook_style": "curiosity/question",
+                      "audience": "global Gen-Z", "aspect": "9:16", "tone": "casual, fast-paced, 英文口播（除非源语言为中文）"},
+    "reuters":       {"label": "Reuters Shorts", "duration": 40, "hook_style": "fact-led",
+                      "audience": "news consumers", "aspect": "9:16", "tone": "neutral, authoritative, 先给结论"},
+    "instagram":     {"label": "Instagram Reels", "duration": 30, "hook_style": "aesthetic/relatable",
+                      "audience": "lifestyle", "aspect": "9:16", "tone": "polished, 视觉优先"},
+    "youtube_shorts": {"label": "YouTube Shorts", "duration": 50, "hook_style": "value/hook",
+                      "audience": "how-to seekers", "aspect": "9:16", "tone": "informative, 干货向"},
+    "kuaishou":      {"label": "快手",        "duration": 35, "hook_style": "接地气/故事",
+                      "audience": "下沉市场大众", "aspect": "9:16", "tone": "亲切、口语、强共鸣"},
+}
+
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 PROMPTS_DIR = BASE_DIR / "prompt_templates"
@@ -152,6 +169,7 @@ class Settings(BaseSettings):
     writer_model: str = ""
     reviewer_model: str = ""
     publisher_model: str = ""
+    video_model: str = ""               # 短视频脚本生成模型（留空 → writer_model → 厂商默认）
     llm_timeout: int = 180
     llm_max_retries: int = 3
 

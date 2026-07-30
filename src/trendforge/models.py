@@ -198,6 +198,27 @@ class PipelineCache(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class VideoScript(Base):
+    """短视频脚本 — 把已生成图文内容适配为多平台短视频形态（口播稿/分镜/钩子/字幕）。
+
+    多元内容形态能力（图文 → 短视频/混剪），是「内容生态建设」职责要求的形态之一。
+    不进 8 步主链路（主链路拓扑固定为有意设计），作为内容库的「衍生形态生成器」独立服务。
+    content_id + platform 唯一（同一内容同一平台只存一份，命中即秒开，不重复消耗 LLM 额度）。
+    """
+    __tablename__ = "video_scripts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    content_id: Mapped[str] = mapped_column(String(64), index=True)
+    platform: Mapped[str] = mapped_column(String(32), index=True)   # douyin/tiktok/reuters/instagram/youtube_shorts
+    language: Mapped[str] = mapped_column(String(8), default="zh")
+    country: Mapped[str] = mapped_column(String(8), default="")      # 目标国家（来自源内容全球化字段）
+    script_json: Mapped[dict] = mapped_column(JSON, default=dict)   # 结构化脚本（hook/scenes/cta/hashtags...）
+    prompt_version: Mapped[str] = mapped_column(String(32), default="")
+    is_fallback: Mapped[bool] = mapped_column(Boolean, default=False)  # 是否规则兜底（非 LLM 生成）
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    __table_args__ = (Index("idx_video_content_platform", "content_id", "platform"),)
+
+
 class ContentEvent(Base):
     """dwd_content_event — 一行 = 一次用户行为"""
     __tablename__ = "content_events"

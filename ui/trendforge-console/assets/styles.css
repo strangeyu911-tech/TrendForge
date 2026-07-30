@@ -571,3 +571,30 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 @media (max-width: 1100px) {
   .reader { max-width: 100%; }
 }
+
+/* ============ 短视频脚本工作室 ============ */
+.vs-head { margin-top: var(--s5); display: flex; flex-direction: column; gap: var(--s3); }
+.vs-title { font-family: var(--font-display); font-weight: 700; font-size: 22px; color: var(--ink); }
+.vs-meta { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.vs-hook {
+  display: flex; align-items: center; gap: var(--s3); margin-top: var(--s5);
+  background: var(--bg-sunken); border-radius: var(--r-md); padding: var(--s4) var(--s5);
+}
+.vs-hook__text { font-size: 16px; font-weight: 600; color: var(--ink); }
+.vs-cover { margin-top: var(--s5); display: flex; align-items: center; gap: var(--s3); }
+.vs-cover b { font-size: 16px; color: var(--ink); }
+.vs-scenes { display: flex; flex-direction: column; gap: var(--s3); }
+.vs-scene { display: grid; grid-template-columns: 44px 1fr; gap: var(--s4); align-items: start;
+  background: var(--bg-base); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s4); }
+.vs-scene__idx {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--ember-soft); color: var(--ember-deep); font: 700 16px/1 var(--font-mono);
+}
+.vs-scene__body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.vs-scene__row { display: grid; grid-template-columns: 54px 1fr; gap: var(--s3); align-items: baseline; font-size: 14px; }
+.vs-scene__row > span:last-child { color: var(--ink); }
+.vs-scene__meta { display: flex; gap: var(--s4); color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
+.vs-cta { margin-top: var(--s5); display: flex; align-items: center; gap: var(--s3); }
+.vs-cta b { font-size: 15px; color: var(--ember-deep); }
+.vs-tags { margin-top: var(--s5); display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; }
+.vs-tags > div { display: flex; flex-wrap: wrap; gap: var(--s2); }

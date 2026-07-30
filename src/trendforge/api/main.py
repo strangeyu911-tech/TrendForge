@@ -534,6 +534,52 @@ async def api_cost_trend(days: int = Query(12), session: AsyncSession = Depends(
     return {"labels": labels, "cost": cost, "eff": eff}
 
 
+# ============ 短视频脚本（多元内容形态）============
+@app.get("/api/video-platforms")
+async def video_platforms():
+    """短视频平台预设（抖音/TikTok/Reuters Shorts/...）"""
+    from config import VIDEO_PLATFORMS
+    return {"platforms": [{"key": k, **v} for k, v in VIDEO_PLATFORMS.items()]}
+
+
+@app.post("/api/video-script")
+async def create_video_script(req: dict, session: AsyncSession = Depends(get_db)):
+    """把一篇图文内容适配为某平台短视频脚本（图文 → 短视频形态）。
+
+    工程化加固（同 run-pipeline）：
+    - 结果按 content_id+platform 落库，命中即秒开、不重复消耗 LLM 额度；
+    - LLM 不可用时（免费模型限流）自动规则兜底，绝不裸 500，控制台永远可演示；
+    - force=true 时强制重新生成（运营点一次刷新缓存后秒开）。
+    """
+    content_id = (req.get("content_id") or (req.get("content") or {}).get("content_id"))
+    if not content_id:
+        raise HTTPException(400, "content_id 必填")
+    platform = req.get("platform") or "douyin"
+    force = bool(req.get("force", False))
+    from models import Content
+    c = await session.get(Content, content_id)
+    if not c:
+        raise HTTPException(404, "内容不存在")
+    from agents.video_script_planner import generate_video_script
+    result = await generate_video_script(
+        session,
+        content_id=content_id, title=c.title,
+        summary=c.summary or "", body=c.body or [],
+        tags=c.tags or [], country=c.country or "US",
+        language=c.language or "zh", platform=platform, force=force,
+    )
+    await session.commit()
+    return result
+
+
+@app.get("/api/video-script/{content_id}")
+async def get_video_script(content_id: str, platform: str = "", session: AsyncSession = Depends(get_db)):
+    """列出某内容已生成的短视频脚本（可选按平台过滤）"""
+    from agents.video_script_planner import list_video_scripts
+    scripts = await list_video_scripts(session, content_id, platform)
+    return {"content_id": content_id, "scripts": scripts}
+
+
 # ============ 内容中心（平台化）============
 @app.get("/api/contents")
 async def api_contents(country: str | None = None, platform: str | None = None,

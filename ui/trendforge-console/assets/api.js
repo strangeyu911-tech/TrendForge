@@ -408,6 +408,19 @@ window.VM = (function () {
     return { ...detail, trace: traceInfo };
   }
 
+  /* ================= 短视频脚本工作室（图文 → 多平台短视频形态） ================= */
+  async function videoscriptStudio(preselectId) {
+    const platforms = await live(() => VM.videoPlatforms(), () => M.videoPlatforms, "video.platforms");
+    const contents = await live(
+      async () => (await get("/api/contents?limit=50")).map(c => ({
+        id: c.content_id, title: c.title, country: c.country, language: c.language, quality: c.quality_overall,
+      })),
+      () => M.contents.map(c => ({ id: c.content_id, title: c.title, country: c.country, language: c.language, quality: c.quality_overall })),
+      "video.contents"
+    );
+    return { platforms, contents, preselectId: preselectId || "" };
+  }
+
   /* ================= RUN TOPIC (生产表单提交) ================= */
   async function runTopic(req) {
     if (forced === "mock") return mockRunTopic(req);
@@ -490,11 +503,62 @@ window.VM = (function () {
     return await res.json();
   }
 
+  /* ================= 短视频脚本（多元内容形态） ================= */
+  async function videoPlatforms() {
+    return live(
+      async () => (await get("/api/video-platforms")).platforms,
+      () => M.videoPlatforms,
+      "video.platforms"
+    );
+  }
+
+  async function videoScript(contentId, platform, force) {
+    if (forced === "mock") return mockVideoScript(contentId, platform);
+    try {
+      const url = API_BASE.replace(/\/$/, "") + "/api/video-script";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ content_id: contentId, platform: platform || "douyin", force: !!force }),
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      lastSource = "live";
+      return await res.json();
+    } catch (e) {
+      lastSource = "mock";
+      console.warn("[VM] videoScript live failed, simulated:", e.message);
+      return mockVideoScript(contentId, platform);
+    }
+  }
+  function mockVideoScript(contentId, platform) {
+    const p = (M.videoPlatforms.find(x => x.key === platform)) || M.videoPlatforms[0];
+    const t = (M.contents.find(c => c.content_id === contentId)) || M.contents[0];
+    const title = t ? t.title : "演示热点";
+    return {
+      title: title.slice(0, 40),
+      platform: p.key, platform_label: p.label, duration_sec: p.duration,
+      aspect: p.aspect, tone: p.tone,
+      hook: { text: `（演示）${title}，背后藏着什么？`, type: "question" },
+      cover_text: title.slice(0, 12),
+      scenes: [
+        { idx: 1, visual: "开场画面：主持人/新闻画面", narration: `先别划走，${title}。`, caption: title.slice(0, 20), duration_sec: 8, bgm: "轻快节奏" },
+        { idx: 2, visual: "关键数据/画面切入", narration: "核心事实如下。", caption: "核心事实", duration_sec: 12, bgm: "紧张鼓点" },
+        { idx: 3, visual: "结尾总结 + CTA", narration: "关注我，看清下一站。", caption: "关注看后续", duration_sec: 10, bgm: "收尾音效" },
+      ],
+      cta: "关注看后续 · 评论区聊聊你的看法",
+      hashtags: ["#AI", "#热点", "#" + p.label],
+      estimated_retention: 0.55,
+      notes: "离线演示脚本（后端不可达时回退）。",
+      cached: false, is_fallback: true, prompt_version: "mock",
+    };
+  }
+
   return {
     get API_BASE() { return API_BASE; },
     setMode(m) { forced = m; },
     get mode() { return forced || "auto"; },
     get lastSource() { return lastSource; },
     overview, production, trace, rag, prompts, analytics, badcases, contentsList, content, runTopic, runPipeline, pollPipelineJob,
+    videoPlatforms, videoScript,
   };
 })();
