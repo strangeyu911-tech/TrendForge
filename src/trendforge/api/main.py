@@ -99,16 +99,12 @@ async def run_topic(req: RunTopicRequest, session: AsyncSession = Depends(get_db
 @app.post("/api/content/run-pipeline")
 async def run_pipeline(req: RunPipelineRequest, session: AsyncSession = Depends(get_db)):
     """完整流水线：信号 → 选题 → 生产"""
-    import traceback as _tb
-    try:
-        strategy = {"categories": req.categories, "country": req.country, "max_topics": req.max_topics,
-                     "variants_per_topic": max(1, int(req.variants_per_topic))}
-        orch = WorkflowOrchestrator()
-        result = await orch.run_pipeline(session, req.signals, strategy)
-        await session.commit()
-        return result
-    except Exception as _e:
-        return {"_error": str(_e), "_trace": _tb.format_exc()[-2000:]}
+    strategy = {"categories": req.categories, "country": req.country, "max_topics": req.max_topics,
+                 "variants_per_topic": max(1, int(req.variants_per_topic))}
+    orch = WorkflowOrchestrator()
+    result = await orch.run_pipeline(session, req.signals, strategy)
+    await session.commit()
+    return result
 
 
 @app.get("/api/content/{content_id}")
