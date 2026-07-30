@@ -141,8 +141,12 @@ function renderPipelineResult(r) {
   const dedupHtml = dedup
     ? `<div class="pl-meta">${dedup.published_count ? `已发布 ${dedup.published_count} 篇 · 本批规避重复选题 <b>${dedup.filtered_repeats}</b> 个` : "暂无已发布内容，无需去重"}${r.variants_per_topic > 1 ? ` · 每话题 <b>${r.variants_per_topic}</b> 视角裂变` : ""}</div>`
     : "";
+  const cacheBanner = r.cached
+    ? `<div class="pl-cache ${r.served_from_cache_due_to_error ? "pl-cache--warn" : "pl-cache--ok"}">${r.served_from_cache_due_to_error ? "⚠ 免费模型限流中，已返回上次生成结果（秒开，无需等待）" : "⚡ 已命中缓存，秒开（未重复消耗模型额度）"}</div>`
+    : "";
   return `
     <div class="pl-out">
+      ${cacheBanner}
       ${dedupHtml}
       <div class="pl-step">
         <div class="pl-step__h"><span class="badge badge--ok"><span class="b-dot"></span>① 趋势探测</span> 发现 ${trendCount} 个热点</div>
@@ -281,6 +285,7 @@ R.production = async (d) => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" stroke-linejoin="round"/></svg>
             运行完整流水线
           </button>
+          <label class="chk"><input type="checkbox" id="forceGenChk" /> 强制重新生成（跳过缓存）</label>
           <span class="hint">将依次执行 8 步 Agent 链路，耗时视话题数而定</span>
         </div>
         <div id="pipelineResult"></div>
@@ -768,20 +773,48 @@ document.addEventListener("click", e => {
   const signals = lines.length ? [{ source: "console", items: lines.map(t => ({ title: t, heat: 0 })) }] : [];
   const box = $("#pipelineResult");
   const orig = btn.innerHTML;
+  const force = !!(document.getElementById("forceGenChk") && document.getElementById("forceGenChk").checked);
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="width:14px;height:14px"></span> 运行中…';
-  if (box) box.innerHTML = '<div class="hint">正在探测趋势并执行流水线…</div>';
+  // 友好状态轮播：免费模型可能限流排队，给出“模型繁忙自动重试”的心理预期
+  const phases = [
+    "正在探测趋势并执行流水线…",
+    "① 趋势探测 → ② 自动选题（已做去重）…",
+    "③ 检索知识库 + 调用 AI 写作中（免费模型排队请稍候）…",
+    "模型繁忙？已自动退避重试 / 切换备用免费模型，无需操作…",
+    "审核与发布中…",
+  ];
+  let pi = 0;
+  if (box) box.innerHTML = `<div class="hint" id="plStatus">${phases[0]}</div>`;
+  const timer = setInterval(() => { pi = (pi + 1) % phases.length; const s = document.getElementById("plStatus"); if (s) s.textContent = phases[pi]; }, 6000);
   VM.runPipeline({ signals, categories: ["tech", "finance", "world"], max_topics: 3,
     country: ($("#countrySel") ? $("#countrySel").value : "CN"),
-    variants_per_topic: ($("#variantsSel") ? parseInt($("#variantsSel").value, 10) || 1 : 1) })
+    variants_per_topic: ($("#variantsSel") ? parseInt($("#variantsSel").value, 10) || 1 : 1),
+    force })
     .then(r => {
-      if (r && r.simulated) toast("离线模式：已模拟完整流水线（接入后端后真实自动探测）");
+      clearInterval(timer);
+      if (r && r.ok === false) { if (box) box.innerHTML = pipelineErrorHTML(r); toast("生成失败，已给出降级提示"); return; }
+      if (r && r.cached) toast(r.served_from_cache_due_to_error ? "限流中：已返回上次生成结果" : "命中缓存（秒开）");
+      else if (r && r.simulated) toast("离线模式：已模拟完整流水线");
       else toast("完整流水线已执行 · 发现 " + (r.trends_count || 0) + " 趋势 / " + (r.topics_count || 0) + " 选题");
       if (box) box.innerHTML = renderPipelineResult(r);
     })
-    .catch(err => { toast("运行失败：" + (err && err.message ? err.message : err)); if (box) box.innerHTML = ""; })
+    .catch(err => { clearInterval(timer); toast("运行失败：" + (err && err.message ? err.message : err)); if (box) box.innerHTML = ""; })
     .finally(() => { btn.disabled = false; btn.innerHTML = orig; });
 });
+
+/* 生成失败（如免费模型持续限流且无可降级缓存）时的友好降级卡片 */
+function pipelineErrorHTML(r) {
+  return `<div class="pl-out">
+    <div class="pl-cache pl-cache--warn">⚠ 本次生成失败：${tfEsc((r.error || "").slice(0, 160))}</div>
+    <div class="pl-step">
+      <div class="pl-step__h"><span class="badge badge--warn"><span class="b-dot"></span>降级建议</span></div>
+      <div class="hint">${tfEsc(r.tip || "免费模型当前限流或生成失败，可稍后重试。")}</div>
+      <div class="pl-actions" style="margin-top:var(--s3)">
+        <button class="btn" onclick="goView('contents')">查看已生成内容 →</button>
+      </div>
+    </div>
+  </div>`;
+}
 
 /* ---- bad case badge count (mock-only metric) ---- */
 try { $("#bcBadge").textContent = (window.MOCK.badcases || []).filter(b => b.status === "open").length; } catch (e) {}

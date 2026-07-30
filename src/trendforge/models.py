@@ -188,6 +188,16 @@ class Content(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class PipelineCache(Base):
+    """run-pipeline 结果缓存：免费模型限流时保证 Demo 秒开、可重复查看（不重复消耗 LLM 额度）"""
+    __tablename__ = "pipeline_cache"
+    req_hash: Mapped[str] = mapped_column(String(64), primary_key=True)   # 归一化请求签名
+    result_json: Mapped[str] = mapped_column(Text, default="")
+    hits: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class ContentEvent(Base):
     """dwd_content_event — 一行 = 一次用户行为"""
     __tablename__ = "content_events"

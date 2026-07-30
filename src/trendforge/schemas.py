@@ -117,6 +117,7 @@ class RunPipelineRequest(BaseModel):
     categories: list[str] = Field(default_factory=lambda: ["tech", "finance"])
     variants_per_topic: int = 1  # P2: 每个话题生成的多视角变体数（≥2 时按国家内容形态裂变）
     country: str = "CN"
+    force: bool = False  # 为 True 时跳过结果缓存、强制重新生成（用于现场演示真实生成）
 
 
 class TaskResponse(BaseModel):
