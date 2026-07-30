@@ -683,6 +683,7 @@ async function goView(v, param) {
     const d = await LOAD[v](param);
     el.innerHTML = await R[v](d, param);
     if (v === "trace" && param) traceSel = param;
+    if (v === "production") reattachPipelineIfRunning();
   } catch (e) {
     el.innerHTML = `<div class="empty-state"><h3>加载失败</h3><p>${esc(e.message)}</p></div>`;
   }
@@ -780,6 +781,8 @@ function finishRun() {
 function startPolling(job_id, box, phaseTimer) {
   const tick = async () => {
     try {
+      // 视图切换/刷新会重建 #pipelineResult，故每次重新查找当前 DOM 元素，避免写入被替换的旧节点
+      box = document.getElementById("pipelineResult") || box;
       const job = await VM.pollPipelineJob(job_id);
       if (job.status === "succeeded") {
         if (phaseTimer) clearInterval(phaseTimer);
@@ -788,6 +791,8 @@ function startPolling(job_id, box, phaseTimer) {
         if (r.cached) toast(r.served_from_cache_due_to_error ? "限流中：已返回上次生成结果" : "命中缓存（秒开）");
         else toast("完整流水线已执行 · 发现 " + (r.trends_count || 0) + " 趋势 / " + (r.topics_count || 0) + " 选题");
         if (box) box.innerHTML = renderPipelineResult(r);
+        // 持久化最近一次成功结果，供切走再回来时回显（24h 内）
+        try { localStorage.setItem("tf_pipeline_last", JSON.stringify({ result: r, at: Date.now() })); } catch (e) {}
         finishRun();
       } else if (job.status === "failed") {
         if (phaseTimer) clearInterval(phaseTimer);
@@ -867,6 +872,33 @@ document.addEventListener("click", e => {
   if (b) { b.disabled = true; b.innerHTML = "生成中…"; }
   startPolling(job_id, box, null);
 })();
+
+/* 进入内容生产视图时：若后台流水线仍在跑则恢复“生成中”状态并继续轮询；
+   若已完成（含切走期间跑完）则回显上次结果 —— 解决“视图切换导致流水线看起来停止/结果丢失” */
+function reattachPipelineIfRunning() {
+  const job_id = localStorage.getItem("tf_pipeline_job");
+  if (job_id) {
+    // 仍在运行：重新显示“生成中”，轮询计时器本身跨视图存活，box 由 tick 动态查找
+    const box = document.getElementById("pipelineResult");
+    const b = document.getElementById("runPipelineBtn");
+    if (b) { b.disabled = true; b.innerHTML = "生成中…"; }
+    if (box) box.innerHTML = `<div class="hint" id="plStatus">正在后台生成中…（已恢复轮询，进度不丢失）</div>`;
+    return;
+  }
+  // 无在跑任务：若有 24h 内最近一次成功结果，回显（解决“完成前切走再回来结果丢失”）
+  const last = localStorage.getItem("tf_pipeline_last");
+  if (last) {
+    try {
+      const obj = JSON.parse(last);
+      if (obj.at && Date.now() - obj.at < 24 * 3600 * 1000) {
+        const box = document.getElementById("pipelineResult");
+        const b = document.getElementById("runPipelineBtn");
+        if (b) { b.disabled = false; b.innerHTML = "运行完整流水线"; }
+        if (box) box.innerHTML = renderPipelineResult(obj.result || obj);
+      }
+    } catch (e) {}
+  }
+}
 
 /* 生成失败（如免费模型持续限流且无可降级缓存）时的友好降级卡片 */
 function pipelineErrorHTML(r) {
