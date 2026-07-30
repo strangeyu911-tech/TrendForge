@@ -7,13 +7,14 @@
 - Embedding 独立配置（get_embedder），与对话厂商解耦，保持向量维度稳定
 """
 from __future__ import annotations
+import asyncio
 import json
 import os
 import time
 from dataclasses import dataclass
 from typing import Any
 import httpx
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 from config import settings, VENDOR_DEFAULTS
 
 
@@ -110,6 +111,21 @@ class BaseProvider:
 LLMProvider = BaseProvider
 
 
+async def _retry_on_rate_limit(coro_factory, max_retries: int = 4):
+    """免费模型(如 glm-4.7-flash)常有速率限制/全局过载(429 code 1305)。
+    捕获 RateLimitError 做指数退避重试(4/8/16/30s)，避免流水线因瞬时限流直接 500。"""
+    last_err: Exception | None = None
+    for attempt in range(max_retries + 1):
+        try:
+            return await coro_factory()
+        except RateLimitError as e:
+            last_err = e
+            if attempt >= max_retries:
+                raise
+            await asyncio.sleep(min(2 ** (attempt + 2), 30))
+    raise last_err or RuntimeError("LLM 调用在限流重试后仍未成功")
+
+
 class OpenAICompatibleProvider(BaseProvider):
     """OpenAI 兼容厂商：openai / deepseek / kimi / qwen / glm"""
     kind = "openai"
@@ -119,7 +135,7 @@ class OpenAICompatibleProvider(BaseProvider):
         self.vendor = vendor
         self.client = AsyncOpenAI(
             api_key=api_key, base_url=base_url,
-            timeout=settings.llm_timeout, max_retries=settings.llm_max_retries,
+            timeout=settings.llm_timeout, max_retries=0,
         )
 
     async def chat(self, prompt, model=None, system=None, json_mode=False, temperature=0.7, max_tokens=None) -> LLMResponse:
@@ -136,7 +152,10 @@ class OpenAICompatibleProvider(BaseProvider):
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
         t0 = time.time()
-        resp = await self.client.chat.completions.create(**kwargs)
+        resp = await _retry_on_rate_limit(
+            lambda: self.client.chat.completions.create(**kwargs),
+            settings.llm_max_retries,
+        )
         latency_ms = int((time.time() - t0) * 1000)
         text = resp.choices[0].message.content or ""
         tin = resp.usage.prompt_tokens if resp.usage else 0
