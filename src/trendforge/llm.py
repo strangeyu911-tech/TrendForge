@@ -111,6 +111,16 @@ class BaseProvider:
 LLMProvider = BaseProvider
 
 
+# 免费模型常被限流(429 code 1305 全局过载)：主模型限流时按同厂商顺序回退到其他免费模型
+FALLBACK_MODELS: dict[str, list[str]] = {
+    "glm": ["glm-4-flash", "glm-4.5-flash"],
+    "openai": [],
+    "deepseek": [],
+    "kimi": [],
+    "qwen": [],
+}
+
+
 async def _retry_on_rate_limit(coro_factory, max_retries: int = 5):
     """免费模型(如 glm-4.7-flash)常有速率限制/全局过载(429 code 1305)。
     捕获 RateLimitError 做指数退避重试(8/16/32/60/60s)，熬过分钟级限流，避免流水线直接 500。"""
@@ -152,10 +162,27 @@ class OpenAICompatibleProvider(BaseProvider):
         if json_mode:
             kwargs["response_format"] = {"type": "json_object"}
         t0 = time.time()
-        resp = await _retry_on_rate_limit(
-            lambda: self.client.chat.completions.create(**kwargs),
-            settings.llm_max_retries,
-        )
+        # 候选模型链：主模型优先，限流时回退同厂商其他免费模型
+        chain = [model] + [f for f in FALLBACK_MODELS.get(self.vendor, []) if f and f != model]
+        resp = None
+        used_model = model
+        last_err: Exception | None = None
+        for cand in chain:
+            k = dict(kwargs)
+            k["model"] = cand
+            try:
+                resp = await _retry_on_rate_limit(
+                    lambda: self.client.chat.completions.create(**k),
+                    settings.llm_max_retries,
+                )
+                used_model = cand
+                break
+            except RateLimitError as e:
+                last_err = e
+                continue
+        if resp is None:
+            raise last_err or RuntimeError("所有候选模型均被限流")
+        model = used_model
         latency_ms = int((time.time() - t0) * 1000)
         text = resp.choices[0].message.content or ""
         tin = resp.usage.prompt_tokens if resp.usage else 0
