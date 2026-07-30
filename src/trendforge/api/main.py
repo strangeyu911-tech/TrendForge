@@ -105,41 +105,45 @@ async def run_pipeline(req: RunPipelineRequest, session: AsyncSession = Depends(
     2) 降级兜底：生成失败（如 429 限流）但有缓存时，返回缓存结果而非 500；
     3) 友好错误：无任何缓存可用时返回结构化错误（非 500），前端引导查看已生成内容。
     """
-    from models import PipelineCache
-    from datetime import datetime as _dt, timedelta as _td
-    import hashlib as _hl, json as _json, os as _os
-
-    strategy = {"categories": req.categories, "country": req.country, "max_topics": req.max_topics,
-                 "variants_per_topic": max(1, int(req.variants_per_topic))}
-    cache_key = _pipeline_cache_key(req)
-    ttl_hours = int(_os.getenv("TF_PIPELINE_CACHE_TTL_HOURS", "24"))
-
-    # 命中未过期缓存 → 秒开（除非强制重新生成）
-    if not req.force:
-        cached = await _load_pipeline_cache(session, cache_key, ttl_hours)
-        if cached is not None:
-            cached["cached"] = True
-            return cached
-
-    orch = WorkflowOrchestrator()
+    import traceback as _tb
     try:
-        result = await orch.run_pipeline(session, req.signals, strategy)
-    except Exception as e:
-        # 生成失败：尝试降级返回缓存（即使略过期），保证 Demo 不 500
-        fallback = await _load_pipeline_cache(session, cache_key, ttl_hours, allow_stale=True)
-        if fallback is not None:
-            fallback["cached"] = True
-            fallback["served_from_cache_due_to_error"] = True
-            fallback["error"] = str(e)
-            return fallback
-        # 无缓存可降级 → 友好错误（HTTP 200，前端渲染引导）
-        return {"ok": False, "error": str(e),
-                "tip": "免费模型当前限流或生成失败，可稍后重试；或查看已生成内容 /contents 直接演示成品。"}
-    await session.commit()
-    await _save_pipeline_cache(session, cache_key, result)
-    await session.commit()  # 同时落库 Content 与 pipeline_cache
-    result["cached"] = False
-    return result
+      from models import PipelineCache
+      from datetime import datetime as _dt, timedelta as _td
+      import hashlib as _hl, json as _json, os as _os
+
+      strategy = {"categories": req.categories, "country": req.country, "max_topics": req.max_topics,
+                   "variants_per_topic": max(1, int(req.variants_per_topic))}
+      cache_key = _pipeline_cache_key(req)
+      ttl_hours = int(_os.getenv("TF_PIPELINE_CACHE_TTL_HOURS", "24"))
+
+      # 命中未过期缓存 → 秒开（除非强制重新生成）
+      if not req.force:
+          cached = await _load_pipeline_cache(session, cache_key, ttl_hours)
+          if cached is not None:
+              cached["cached"] = True
+              return cached
+
+      orch = WorkflowOrchestrator()
+      try:
+          result = await orch.run_pipeline(session, req.signals, strategy)
+      except Exception as e:
+          # 生成失败：尝试降级返回缓存（即使略过期），保证 Demo 不 500
+          fallback = await _load_pipeline_cache(session, cache_key, ttl_hours, allow_stale=True)
+          if fallback is not None:
+              fallback["cached"] = True
+              fallback["served_from_cache_due_to_error"] = True
+              fallback["error"] = str(e)
+              return fallback
+          # 无缓存可降级 → 友好错误（HTTP 200，前端渲染引导）
+          return {"ok": False, "error": str(e),
+                  "tip": "免费模型当前限流或生成失败，可稍后重试；或查看已生成内容 /contents 直接演示成品。"}
+      await session.commit()
+      await _save_pipeline_cache(session, cache_key, result)
+      await session.commit()  # 同时落库 Content 与 pipeline_cache
+      result["cached"] = False
+      return result
+    except Exception as _e:
+        return {"_debug_error": str(_e), "_debug_trace": _tb.format_exc()[-2000:]}
 
 
 def _pipeline_cache_key(req: RunPipelineRequest) -> str:
