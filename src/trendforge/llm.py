@@ -111,9 +111,9 @@ class BaseProvider:
 LLMProvider = BaseProvider
 
 
-async def _retry_on_rate_limit(coro_factory, max_retries: int = 4):
+async def _retry_on_rate_limit(coro_factory, max_retries: int = 5):
     """免费模型(如 glm-4.7-flash)常有速率限制/全局过载(429 code 1305)。
-    捕获 RateLimitError 做指数退避重试(4/8/16/30s)，避免流水线因瞬时限流直接 500。"""
+    捕获 RateLimitError 做指数退避重试(8/16/32/60/60s)，熬过分钟级限流，避免流水线直接 500。"""
     last_err: Exception | None = None
     for attempt in range(max_retries + 1):
         try:
@@ -122,7 +122,7 @@ async def _retry_on_rate_limit(coro_factory, max_retries: int = 4):
             last_err = e
             if attempt >= max_retries:
                 raise
-            await asyncio.sleep(min(2 ** (attempt + 2), 30))
+            await asyncio.sleep(min(2 ** (attempt + 3), 60))
     raise last_err or RuntimeError("LLM 调用在限流重试后仍未成功")
 
 
