@@ -19,10 +19,23 @@ class ResearchAgent(BaseAgent):
         chunks = retriever.retrieve(queries, top_k=settings.rag_top_k, filters=filters)
         # 3. 转证据集合
         evidences = self._to_evidences(chunks)
+        # 3.1 严格过滤为空 → 宽松兜底（仅按相关性），保证 Demo 端到端产出、不卡 degraded
+        if not evidences:
+            chunks = retriever.retrieve(queries, top_k=settings.rag_top_k, filters=None)
+            evidences = self._to_evidences(chunks)
+            if evidences:
+                relaxed = True
+                filters = {}
+            else:
+                relaxed = False
+        else:
+            relaxed = False
         # 4. 冲突检测（简化）
         conflicts = self._detect_conflicts(evidences)
         summary = f"共召回 {len(evidences)} 条证据，覆盖 {len({e['source_name'] for e in evidences})} 个来源"
-        if filters:
+        if relaxed:
+            summary += "，[宽松兜底]严格过滤无命中，已按纯相关性检索"
+        elif filters:
             summary += f"，过滤={filters}"
         if conflicts:
             summary += f"，{len(conflicts)} 处冲突"
