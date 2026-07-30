@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from sqlalchemy import select
@@ -23,6 +24,32 @@ from config import settings, VIDEO_PLATFORMS, COUNTRY_STRATEGIES
 from llm import get_llm, extract_json
 from models import VideoScript
 from prompts import PromptManager
+
+
+# 正文溯源标记：主链路 Writer/FactChecker 会在正文里插入 [ev_xxx] 引用（RAG 溯源约定）。
+# 这些标记只服务于主链路核查，对外展示 / 派生内容（短视频脚本、摘要、混剪等）必须剔除，
+# 否则会像文章正文一样被 LLM 原样回显进分镜/口播，或残留在已落库的缓存脚本里。
+EV_RE = re.compile(r"\[ev_[A-Za-z0-9_]+\]")
+
+
+def clean_ev(text: str) -> str:
+    """剔除正文溯源标记 [ev_xxx]，并折叠被掏空后产生的多余空白。"""
+    if not text:
+        return text
+    cleaned = EV_RE.sub("", str(text))
+    cleaned = re.sub(r"\s{2,}", " ", cleaned).strip()
+    return cleaned
+
+
+def clean_script_ev(obj):
+    """递归清洗脚本 JSON 中的所有字符串字段（覆盖缓存脏数据与 LLM 回显）。"""
+    if isinstance(obj, str):
+        return clean_ev(obj)
+    if isinstance(obj, list):
+        return [clean_script_ev(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: clean_script_ev(v) for k, v in obj.items()}
+    return obj
 
 
 def _video_model() -> str:
@@ -56,7 +83,7 @@ def _assemble_body_text(body: list[dict]) -> str:
         if b.get("type") == "heading":
             t = "## " + t
         if t:
-            lines.append(t)
+            lines.append(clean_ev(t))
     return "\n".join(lines)
 
 
@@ -163,7 +190,7 @@ async def generate_video_script(
         )
     )).scalars().first()
     if existing and not force:
-        s = dict(existing.script_json or {})
+        s = clean_script_ev(dict(existing.script_json or {}))
         s.update({"cached": True, "is_fallback": existing.is_fallback,
                   "prompt_version": existing.prompt_version, "platform": platform})
         return s
@@ -183,7 +210,7 @@ async def generate_video_script(
         )
         llm = get_llm(settings.llm_vendor)
         resp = await llm.chat(rendered, model=_video_model(), json_mode=True, temperature=0.8, max_tokens=1500)
-        script = _build_script(resp.text, platform, preset, language, title)
+        script = clean_script_ev(_build_script(resp.text, platform, preset, language, title))
         prompt_version = version
         is_fallback = False
     except Exception as e:  # 限流 / 任何 LLM 异常 → 规则兜底，绝不裸失败
