@@ -764,7 +764,53 @@ document.addEventListener("submit", e => {
   }
 });
 
-/* ---- full pipeline run (趋势探测→选题→生产) ---- */
+/* ---- full pipeline run (趋势探测→选题→生产) —— 后台任务 + 轮询（刷新安全） ---- */
+let activePollTimer = null;
+
+function resetRunBtn() {
+  const b = document.getElementById("runPipelineBtn");
+  if (b) { b.disabled = false; b.innerHTML = "运行完整流水线"; }
+}
+function finishRun() {
+  if (activePollTimer) { clearInterval(activePollTimer); activePollTimer = null; }
+  localStorage.removeItem("tf_pipeline_job");
+  resetRunBtn();
+}
+// 轮询后台任务状态；phaseTimer 为可选的客户端状态轮播计时器（刷新恢复场景为 null）
+function startPolling(job_id, box, phaseTimer) {
+  const tick = async () => {
+    try {
+      const job = await VM.pollPipelineJob(job_id);
+      if (job.status === "succeeded") {
+        if (phaseTimer) clearInterval(phaseTimer);
+        if (activePollTimer) { clearInterval(activePollTimer); activePollTimer = null; }
+        const r = job.result || {};
+        if (r.cached) toast(r.served_from_cache_due_to_error ? "限流中：已返回上次生成结果" : "命中缓存（秒开）");
+        else toast("完整流水线已执行 · 发现 " + (r.trends_count || 0) + " 趋势 / " + (r.topics_count || 0) + " 选题");
+        if (box) box.innerHTML = renderPipelineResult(r);
+        finishRun();
+      } else if (job.status === "failed") {
+        if (phaseTimer) clearInterval(phaseTimer);
+        if (activePollTimer) { clearInterval(activePollTimer); activePollTimer = null; }
+        if (box) box.innerHTML = pipelineErrorHTML(job);
+        toast("生成失败，已给出降级提示");
+        finishRun();
+      } else if (job.status === "not_found") {
+        if (phaseTimer) clearInterval(phaseTimer);
+        if (activePollTimer) { clearInterval(activePollTimer); activePollTimer = null; }
+        if (box) box.innerHTML = pipelineErrorHTML({ ok: false, error: "任务未找到（服务可能已重启）", tip: "请重新运行完整流水线。" });
+        toast("任务未找到，请重试");
+        finishRun();
+      }
+      // running：保持轮播状态，继续轮询
+    } catch (e) {
+      // 网络抖动：继续轮询，不中断
+    }
+  };
+  tick();
+  activePollTimer = setInterval(tick, 3000);
+}
+
 document.addEventListener("click", e => {
   if (!e.target.closest("#runPipelineBtn")) return;
   const btn = e.target.closest("#runPipelineBtn");
@@ -772,9 +818,9 @@ document.addEventListener("click", e => {
   const lines = (input && input.value ? input.value : "").split("\n").map(s => s.trim()).filter(Boolean);
   const signals = lines.length ? [{ source: "console", items: lines.map(t => ({ title: t, heat: 0 })) }] : [];
   const box = $("#pipelineResult");
-  const orig = btn.innerHTML;
   const force = !!(document.getElementById("forceGenChk") && document.getElementById("forceGenChk").checked);
-  btn.disabled = true;
+  btn.disabled = true; btn.innerHTML = "生成中…";
+  if (box) box.innerHTML = `<div class="hint" id="plStatus">正在探测趋势并执行流水线…</div>`;
   // 友好状态轮播：免费模型可能限流排队，给出“模型繁忙自动重试”的心理预期
   const phases = [
     "正在探测趋势并执行流水线…",
@@ -784,23 +830,43 @@ document.addEventListener("click", e => {
     "审核与发布中…",
   ];
   let pi = 0;
-  if (box) box.innerHTML = `<div class="hint" id="plStatus">${phases[0]}</div>`;
-  const timer = setInterval(() => { pi = (pi + 1) % phases.length; const s = document.getElementById("plStatus"); if (s) s.textContent = phases[pi]; }, 6000);
+  const phaseTimer = setInterval(() => { pi = (pi + 1) % phases.length; const s = document.getElementById("plStatus"); if (s) s.textContent = phases[pi]; }, 6000);
+
   VM.runPipeline({ signals, categories: ["tech", "finance", "world"], max_topics: 3,
     country: ($("#countrySel") ? $("#countrySel").value : "CN"),
     variants_per_topic: ($("#variantsSel") ? parseInt($("#variantsSel").value, 10) || 1 : 1),
     force })
     .then(r => {
-      clearInterval(timer);
-      if (r && r.ok === false) { if (box) box.innerHTML = pipelineErrorHTML(r); toast("生成失败，已给出降级提示"); return; }
-      if (r && r.cached) toast(r.served_from_cache_due_to_error ? "限流中：已返回上次生成结果" : "命中缓存（秒开）");
-      else if (r && r.simulated) toast("离线模式：已模拟完整流水线");
-      else toast("完整流水线已执行 · 发现 " + (r.trends_count || 0) + " 趋势 / " + (r.topics_count || 0) + " 选题");
-      if (box) box.innerHTML = renderPipelineResult(r);
+      if (r && r.job_id) {
+        // 后台任务：记录 job_id 并轮询（刷新安全，进度不丢失）
+        clearInterval(phaseTimer);
+        localStorage.setItem("tf_pipeline_job", r.job_id);
+        if (box) box.innerHTML = `<div class="hint" id="plStatus">正在后台生成中…（可刷新页面，进度不丢失）</div>`;
+        startPolling(r.job_id, box, null);
+      } else {
+        // 同步结果（命中缓存 / 离线模拟）
+        clearInterval(phaseTimer);
+        if (r && r.ok === false) { if (box) box.innerHTML = pipelineErrorHTML(r); toast("生成失败，已给出降级提示"); finishRun(); return; }
+        if (r && r.cached) toast(r.served_from_cache_due_to_error ? "限流中：已返回上次生成结果" : "命中缓存（秒开）");
+        else if (r && r.simulated) toast("离线模式：已模拟完整流水线");
+        else toast("完整流水线已执行 · 发现 " + (r.trends_count || 0) + " 趋势 / " + (r.topics_count || 0) + " 选题");
+        if (box) box.innerHTML = renderPipelineResult(r);
+        finishRun();
+      }
     })
-    .catch(err => { clearInterval(timer); toast("运行失败：" + (err && err.message ? err.message : err)); if (box) box.innerHTML = ""; })
-    .finally(() => { btn.disabled = false; btn.innerHTML = orig; });
+    .catch(err => { clearInterval(phaseTimer); toast("运行失败：" + (err && err.message ? err.message : err)); if (box) box.innerHTML = ""; finishRun(); });
 });
+
+/* 刷新后恢复轮询：若上次运行尚未结束，自动继续（进度不丢失） */
+(function resumePipelineJob() {
+  const job_id = localStorage.getItem("tf_pipeline_job");
+  if (!job_id) return;
+  const box = $("#pipelineResult");
+  if (box) box.innerHTML = `<div class="hint" id="plStatus">正在后台生成中…（已恢复轮询，进度不丢失）</div>`;
+  const b = document.getElementById("runPipelineBtn");
+  if (b) { b.disabled = true; b.innerHTML = "生成中…"; }
+  startPolling(job_id, box, null);
+})();
 
 /* 生成失败（如免费模型持续限流且无可降级缓存）时的友好降级卡片 */
 function pipelineErrorHTML(r) {

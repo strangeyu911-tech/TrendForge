@@ -482,11 +482,19 @@ window.VM = (function () {
     };
   }
 
+  // 轮询流水线后台任务状态（refresh-safe）
+  async function pollPipelineJob(job_id) {
+    const url = API_BASE.replace(/\/$/, "") + "/api/content/pipeline-job/" + encodeURIComponent(job_id);
+    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return await res.json();
+  }
+
   return {
     get API_BASE() { return API_BASE; },
     setMode(m) { forced = m; },
     get mode() { return forced || "auto"; },
     get lastSource() { return lastSource; },
-    overview, production, trace, rag, prompts, analytics, badcases, contentsList, content, runTopic, runPipeline,
+    overview, production, trace, rag, prompts, analytics, badcases, contentsList, content, runTopic, runPipeline, pollPipelineJob,
   };
 })();

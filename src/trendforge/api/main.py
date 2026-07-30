@@ -2,7 +2,9 @@
 from __future__ import annotations
 import hashlib
 import json
+import asyncio
 import os
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, Query
@@ -23,6 +25,10 @@ from schemas import (
     ExperimentCreateRequest, NewsIngestRequest,
 )
 from config import settings
+
+# 流水线后台任务注册表（单进程内存态；Render 免费层为单实例，轮询请求由同一进程处理）
+PIPELINE_JOBS: dict[str, dict] = {}
+PIPELINE_TASKS: set = set()
 
 
 @asynccontextmanager
@@ -104,12 +110,13 @@ async def run_topic(req: RunTopicRequest, session: AsyncSession = Depends(get_db
 async def run_pipeline(req: RunPipelineRequest, session: AsyncSession = Depends(get_db)):
     """完整流水线：信号 → 选题 → 生产。
 
-    工程化加固（应对免费模型限流）：
+    工程化加固（应对免费模型限流 + 刷新安全）：
     1) 结果缓存：相同请求签名命中缓存则秒开，不重复消耗 LLM 额度（Demo 可重复查看）；
-    2) 降级兜底：生成失败（如 429 限流）但有缓存时，返回缓存结果而非 500；
-    3) 友好错误：无任何缓存可用时返回结构化错误（非 500），前端引导查看已生成内容。
+    2) 后台任务 + 轮询：冷生成 / 强制重生成时立即返回 job_id，流水线在后台脱离请求运行，
+       前端轮询状态——刷新页面或断连都不会中断生成、也不会丢失进度；
+    3) 降级兜底：生成失败（如 429 限流）但有缓存时，返回缓存结果而非 500；
+    4) 友好错误：无任何缓存可用时返回结构化错误（非 500），前端引导查看已生成内容。
     """
-    from models import PipelineCache
     strategy = {"categories": req.categories, "country": req.country, "max_topics": req.max_topics,
                  "variants_per_topic": max(1, int(req.variants_per_topic))}
     cache_key = _pipeline_cache_key(req)
@@ -122,25 +129,55 @@ async def run_pipeline(req: RunPipelineRequest, session: AsyncSession = Depends(
             cached["cached"] = True
             return cached
 
-    orch = WorkflowOrchestrator()
+    # 冷生成 / 强制重生成：提交后台任务并立即返回 job_id（前端据此轮询，刷新安全）
+    job_id = uuid.uuid4().hex
+    task = asyncio.create_task(
+        _run_pipeline_job(job_id, req.signals, strategy, cache_key, ttl_hours)
+    )
+    PIPELINE_TASKS.add(task)
+    task.add_done_callback(PIPELINE_TASKS.discard)
+    return {"job_id": job_id, "status": "running", "cached": False}
+
+
+async def _run_pipeline_job(job_id: str, signals, strategy: dict, cache_key: str, ttl_hours: int):
+    """后台执行流水线（脱离 HTTP 请求生命周期，刷新/断连不中断）。"""
+    from db import async_session
+    PIPELINE_JOBS[job_id] = {"status": "running", "cached": False}
+    session = async_session()
     try:
-        result = await orch.run_pipeline(session, req.signals, strategy)
+        orch = WorkflowOrchestrator()
+        result = await orch.run_pipeline(session, signals, strategy)
+        await session.commit()
+        await _save_pipeline_cache(session, cache_key, result)
+        await session.commit()  # 同时落库 Content 与 pipeline_cache
+        result["cached"] = False
+        PIPELINE_JOBS[job_id] = {"status": "succeeded", "result": result, "cached": False}
     except Exception as e:
         # 生成失败：尝试降级返回缓存（即使略过期），保证 Demo 不 500
-        fallback = await _load_pipeline_cache(session, cache_key, ttl_hours, allow_stale=True)
+        try:
+            fallback = await _load_pipeline_cache(session, cache_key, ttl_hours, allow_stale=True)
+        except Exception:
+            fallback = None
         if fallback is not None:
             fallback["cached"] = True
             fallback["served_from_cache_due_to_error"] = True
             fallback["error"] = str(e)
-            return fallback
-        # 无缓存可降级 → 友好错误（HTTP 200，前端渲染引导）
-        return {"ok": False, "error": str(e),
+            PIPELINE_JOBS[job_id] = {"status": "succeeded", "result": fallback,
+                                     "cached": True, "served_from_cache_due_to_error": True}
+        else:
+            PIPELINE_JOBS[job_id] = {"status": "failed", "ok": False, "error": str(e),
                 "tip": "免费模型当前限流或生成失败，可稍后重试；或查看已生成内容 /contents 直接演示成品。"}
-    await session.commit()
-    await _save_pipeline_cache(session, cache_key, result)
-    await session.commit()  # 同时落库 Content 与 pipeline_cache
-    result["cached"] = False
-    return result
+    finally:
+        await session.close()
+
+
+@app.get("/api/content/pipeline-job/{job_id}")
+async def get_pipeline_job(job_id: str):
+    """轮询流水线后台任务状态（refresh-safe）。"""
+    job = PIPELINE_JOBS.get(job_id)
+    if job is None:
+        return {"status": "not_found"}
+    return job
 
 
 def _pipeline_cache_key(req: RunPipelineRequest) -> str:
