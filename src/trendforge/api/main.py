@@ -5,6 +5,8 @@ import json
 import asyncio
 import os
 import uuid
+import logging
+import traceback
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, Query
@@ -29,6 +31,7 @@ from config import settings
 # 流水线后台任务注册表（单进程内存态；Render 免费层为单实例，轮询请求由同一进程处理）
 PIPELINE_JOBS: dict[str, dict] = {}
 PIPELINE_TASKS: set = set()
+logger = logging.getLogger("trendforge.api")
 
 
 @asynccontextmanager
@@ -165,7 +168,10 @@ async def _run_pipeline_job(job_id: str, signals, strategy: dict, cache_key: str
             PIPELINE_JOBS[job_id] = {"status": "succeeded", "result": fallback,
                                      "cached": True, "served_from_cache_due_to_error": True}
         else:
+            tb = traceback.format_exc()
+            logger.exception("pipeline job %s failed: %s", job_id, e)
             PIPELINE_JOBS[job_id] = {"status": "failed", "ok": False, "error": str(e),
+                "traceback": tb,
                 "tip": "免费模型当前限流或生成失败，可稍后重试；或查看已生成内容 /contents 直接演示成品。"}
     finally:
         await session.close()

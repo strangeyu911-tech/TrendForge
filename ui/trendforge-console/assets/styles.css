@@ -394,6 +394,11 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 .pl-cache { font-size: var(--fs-xs); font-weight: 600; border-radius: var(--r-md); padding: var(--s3) var(--s4); }
 .pl-cache--ok { background: var(--ember-soft); color: var(--ember-deep); border: 1px solid var(--ember); }
 .pl-cache--warn { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
+.pl-eta { margin-top: 6px; font-size: var(--fs-xs); color: var(--ink-soft); font-family: var(--font-mono); }
+.pl-detail { margin-top: 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-sunken); }
+.pl-detail > summary { cursor: pointer; padding: var(--s3) var(--s4); font-size: var(--fs-xs); color: var(--ink-soft); user-select: none; }
+.pl-detail > summary:hover { color: var(--ink); }
+.pl-err { margin: 0; padding: var(--s3) var(--s4) var(--s4); max-height: 240px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-family: var(--font-mono); font-size: 11px; line-height: 1.5; color: var(--ink-soft); }
 .chk { display: flex; align-items: center; gap: var(--s2); font-size: var(--fs-xs); color: var(--ink-soft); cursor: pointer; }
 .chk input { width: 15px; height: 15px; accent-color: var(--ember); }
 .pl-step__h { display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3); font-size: var(--fs-sm); color: var(--ink-soft); }

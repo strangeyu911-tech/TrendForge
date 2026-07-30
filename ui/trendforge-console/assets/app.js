@@ -775,7 +775,33 @@ function resetRunBtn() {
 function finishRun() {
   if (activePollTimer) { clearInterval(activePollTimer); activePollTimer = null; }
   localStorage.removeItem("tf_pipeline_job");
+  localStorage.removeItem("tf_pipeline_est");
   resetRunBtn();
+}
+/* 预计耗时：根据选题数与每话题变体数粗估（免费模型限流下可能更久） */
+function estimatePipelineSeconds(maxTopics, variants) {
+  const mt = Math.max(1, parseInt(maxTopics, 10) || 3);
+  const vp = Math.max(1, parseInt(variants, 10) || 1);
+  const perArticle = 90;   // 检索+大纲+写作+核查+审核 单篇粗估(秒)
+  const base = 20;         // 趋势探测+选题
+  const nominal = base + mt * vp * perArticle;
+  const worst = Math.round(nominal * 2.5); // 免费模型限流退避余量
+  return { nominal, worst };
+}
+function fmtEta(sec) {
+  const m = Math.round(sec / 60);
+  return m <= 1 ? "约 1 分钟" : ("约 " + m + " 分钟");
+}
+function etaTextFromEst(est) {
+  if (!est) return "";
+  return "预计 " + fmtEta(est.nominal) + "–" + fmtEta(est.worst) + "（免费模型限流时可能更久）";
+}
+/* 运行中状态卡片：阶段文案(#plPhase，可独立轮播) + 预计耗时 */
+function runningStatusHTML(etaText) {
+  return `<div class="hint" id="plStatus">`
+    + `<span id="plPhase">正在探测趋势并执行流水线…</span>`
+    + (etaText ? `<div class="pl-eta">${etaText}</div>` : "")
+    + `</div>`;
 }
 // 轮询后台任务状态；phaseTimer 为可选的客户端状态轮播计时器（刷新恢复场景为 null）
 function startPolling(job_id, box, phaseTimer) {
@@ -803,7 +829,7 @@ function startPolling(job_id, box, phaseTimer) {
       } else if (job.status === "not_found") {
         if (phaseTimer) clearInterval(phaseTimer);
         if (activePollTimer) { clearInterval(activePollTimer); activePollTimer = null; }
-        if (box) box.innerHTML = pipelineErrorHTML({ ok: false, error: "任务未找到（服务可能已重启）", tip: "请重新运行完整流水线。" });
+        if (box) box.innerHTML = pipelineErrorHTML({ ok: false, error: "任务未找到：后台任务不存在", tip: "很可能是免费实例休眠/重启后内存任务丢失（任务只存于单进程内存、不持久化）。请重新运行完整流水线。" });
         toast("任务未找到，请重试");
         finishRun();
       }
@@ -824,8 +850,12 @@ document.addEventListener("click", e => {
   const signals = lines.length ? [{ source: "console", items: lines.map(t => ({ title: t, heat: 0 })) }] : [];
   const box = $("#pipelineResult");
   const force = !!(document.getElementById("forceGenChk") && document.getElementById("forceGenChk").checked);
+  const vSel = ($("#variantsSel") ? parseInt($("#variantsSel").value, 10) || 1 : 1);
+  const est = estimatePipelineSeconds(3, vSel);
+  localStorage.setItem("tf_pipeline_est", JSON.stringify(est));
+  const etaTxt = etaTextFromEst(est);
   btn.disabled = true; btn.innerHTML = "生成中…";
-  if (box) box.innerHTML = `<div class="hint" id="plStatus">正在探测趋势并执行流水线…</div>`;
+  if (box) box.innerHTML = runningStatusHTML(etaTxt);
   // 友好状态轮播：免费模型可能限流排队，给出“模型繁忙自动重试”的心理预期
   const phases = [
     "正在探测趋势并执行流水线…",
@@ -835,18 +865,18 @@ document.addEventListener("click", e => {
     "审核与发布中…",
   ];
   let pi = 0;
-  const phaseTimer = setInterval(() => { pi = (pi + 1) % phases.length; const s = document.getElementById("plStatus"); if (s) s.textContent = phases[pi]; }, 6000);
+  const phaseTimer = setInterval(() => { pi = (pi + 1) % phases.length; const s = document.getElementById("plPhase"); if (s) s.textContent = phases[pi]; }, 6000);
 
   VM.runPipeline({ signals, categories: ["tech", "finance", "world"], max_topics: 3,
     country: ($("#countrySel") ? $("#countrySel").value : "CN"),
-    variants_per_topic: ($("#variantsSel") ? parseInt($("#variantsSel").value, 10) || 1 : 1),
+    variants_per_topic: vSel,
     force })
     .then(r => {
       if (r && r.job_id) {
         // 后台任务：记录 job_id 并轮询（刷新安全，进度不丢失）
         clearInterval(phaseTimer);
         localStorage.setItem("tf_pipeline_job", r.job_id);
-        if (box) box.innerHTML = `<div class="hint" id="plStatus">正在后台生成中…（可刷新页面，进度不丢失）</div>`;
+        if (box) box.innerHTML = runningStatusHTML(etaTxt);
         startPolling(r.job_id, box, null);
       } else {
         // 同步结果（命中缓存 / 离线模拟）
@@ -867,7 +897,8 @@ document.addEventListener("click", e => {
   const job_id = localStorage.getItem("tf_pipeline_job");
   if (!job_id) return;
   const box = $("#pipelineResult");
-  if (box) box.innerHTML = `<div class="hint" id="plStatus">正在后台生成中…（已恢复轮询，进度不丢失）</div>`;
+  const est = JSON.parse(localStorage.getItem("tf_pipeline_est") || "null");
+  if (box) box.innerHTML = runningStatusHTML(etaTextFromEst(est));
   const b = document.getElementById("runPipelineBtn");
   if (b) { b.disabled = true; b.innerHTML = "生成中…"; }
   startPolling(job_id, box, null);
@@ -882,7 +913,8 @@ function reattachPipelineIfRunning() {
     const box = document.getElementById("pipelineResult");
     const b = document.getElementById("runPipelineBtn");
     if (b) { b.disabled = true; b.innerHTML = "生成中…"; }
-    if (box) box.innerHTML = `<div class="hint" id="plStatus">正在后台生成中…（已恢复轮询，进度不丢失）</div>`;
+    const est = JSON.parse(localStorage.getItem("tf_pipeline_est") || "null");
+    if (box) box.innerHTML = runningStatusHTML(etaTextFromEst(est));
     return;
   }
   // 无在跑任务：若有 24h 内最近一次成功结果，回显（解决“完成前切走再回来结果丢失”）
@@ -900,13 +932,35 @@ function reattachPipelineIfRunning() {
   }
 }
 
-/* 生成失败（如免费模型持续限流且无可降级缓存）时的友好降级卡片 */
+/* 失败分类：限流（外部约束，非 bug，最常见）vs 其它（需排查） */
+function classifyPipelineError(r) {
+  const text = ((r.error || "") + " " + (r.tip || "")).toLowerCase();
+  const isRate = /429|ratelimit|1305|1113|访问量|余额|限流|quota|rate.?limit|too many requests/.test(text);
+  if (isRate) {
+    return {
+      title: "免费模型当前限流（非代码问题）",
+      detail: "智谱 GLM 免费 flash 模型是共享额度，访问量大时会被限流（HTTP 429）。这不是程序 bug——稍等 1–2 分钟重试通常即可恢复；或先点一次「强制重新生成」刷新缓存后秒开。",
+      action: "建议：① 等片刻后重试；② 或查看已生成内容 /contents 直接演示成品。",
+    };
+  }
+  return {
+    title: "生成过程出错（需排查）",
+    detail: (r.error || "未知错误") + " 这类错误通常不是限流，请展开下方技术详情核对。",
+    action: r.tip || "可稍后重试，或查看已生成内容 /contents。",
+  };
+}
+/* 生成失败（如免费模型持续限流且无可降级缓存）时的友好降级卡片（含可展开技术详情，供开发者定位） */
 function pipelineErrorHTML(r) {
+  const c = classifyPipelineError(r);
+  const raw = (r.error || "") + (r.traceback ? ("\n\n" + r.traceback) : "");
+  const shown = raw.slice(0, 1200);
   return `<div class="pl-out">
-    <div class="pl-cache pl-cache--warn">⚠ 本次生成失败：${tfEsc((r.error || "").slice(0, 160))}</div>
+    <div class="pl-cache pl-cache--warn">⚠ ${tfEsc(c.title)}</div>
     <div class="pl-step">
-      <div class="pl-step__h"><span class="badge badge--warn"><span class="b-dot"></span>降级建议</span></div>
-      <div class="hint">${tfEsc(r.tip || "免费模型当前限流或生成失败，可稍后重试。")}</div>
+      <div class="pl-step__h"><span class="badge badge--warn"><span class="b-dot"></span>说明</span></div>
+      <div class="hint">${tfEsc(c.detail)}</div>
+      <div class="hint" style="margin-top:8px">${tfEsc(c.action)}</div>
+      ${shown ? `<details class="pl-detail"><summary>查看技术错误详情（开发者）</summary><pre class="pl-err">${tfEsc(shown)}</pre></details>` : ""}
       <div class="pl-actions" style="margin-top:var(--s3)">
         <button class="btn" onclick="goView('contents')">查看已生成内容 →</button>
       </div>
